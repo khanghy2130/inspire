@@ -20,11 +20,12 @@ export default class LoadScene {
     [205, 145, 235], // purple (orange)
     [235, 200, 85], // yellow
   ]
+  readonly GRAY_COLOR = 30
 
-  readonly GENDER_COLORS: [number, number, number][] = [
-    [115, 185, 235], // male
-    [230, 170, 220], // female
-  ]
+  // readonly GENDER_COLORS: [number, number, number][] = [
+  //   [115, 185, 235], // male
+  //   [230, 170, 220], // female
+  // ]
 
   private imagesCreateFunctions: Function[] = [
     // create subject icons (60x60)
@@ -126,13 +127,49 @@ export default class LoadScene {
     const p5 = this.p5
 
     p5.background(10)
-    // p5.scale(3.5) ////
+    p5.scale(3.5) ////
 
     // card size: 100 x 160
     const cardIndex = p5.floor(p5.frameCount * 0.02) % 32
     const oc = originalCards[cardIndex]
+    const subjectColor = p5.color(...this.SUBJECT_COLORS[oc.subject])
+    const cardBgColor = p5.lerpColor(
+      p5.color(subjectColor),
+      p5.color(this.GRAY_COLOR),
+      0.85
+    )
 
-    // card bg/////
+    // bg fill
+    p5.noStroke()
+    p5.fill(cardBgColor)
+    p5.rect(50, 80, 95, 155, 20)
+
+    // top left corner fill
+    p5.fill(subjectColor)
+    p5.rect(25, 20, 45, 35, 15)
+
+    // bg arcs
+    p5.strokeCap(p5.SQUARE)
+    p5.noFill()
+    p5.strokeWeight(12)
+    for (let ai = 0; ai < 8; ai++) {
+      p5.stroke(
+        p5.lerpColor(
+          p5.color(subjectColor),
+          p5.color(cardBgColor),
+          (ai + 1) * 0.118
+        )
+      )
+      p5.arc(
+        3,
+        3,
+        60 + 10 * ai + 10 * (ai >> 1),
+        40 + 20 * ai - 10 * (ai >> 1),
+        0,
+        1.58
+      )
+    }
+    p5.strokeCap(p5.ROUND)
 
     // avatar
     p5.image(
@@ -158,14 +195,7 @@ export default class LoadScene {
       p5.color(0),
       p5
     )
-    customFont.render(
-      oc.name,
-      50 - nameHalfWidth,
-      120,
-      12,
-      p5.color(...this.GENDER_COLORS[oc.isMale ? 0 : 1]),
-      p5
-    )
+    customFont.render(oc.name, 50 - nameHalfWidth, 120, 12, p5.color(250), p5)
 
     // ability
     this.renderAbilityIcon(oc, 50, 138, 0.5)
@@ -179,13 +209,12 @@ export default class LoadScene {
     }
 
     // power ///
-    customFont.render("125", 17, 37, 20, p5.color(0), p5)
-    customFont.render("125", 15, 35, 20, p5.color(250), p5)
+    customFont.render("123", 15, 35, 20, p5.color(0), p5)
+    customFont.render("123", 13, 33, 20, p5.color(250), p5)
 
     // boundary
     p5.noFill()
     p5.strokeWeight(2.5)
-    const subjectColor = p5.color(...this.SUBJECT_COLORS[oc.subject])
     p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.5))
     p5.rect(50, 80, 97, 157, 20)
     p5.strokeWeight(2)
