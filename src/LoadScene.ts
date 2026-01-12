@@ -9,7 +9,8 @@ export default class LoadScene {
   isLoaded: boolean = false
 
   starImage!: P5.Image
-  cardBackside!: P5.Image[]
+  cardBackside!: P5.Image
+  backgroundImage!: P5.Image
   subjectIconImages: P5.Image[] = []
   projectPanelImages: P5.Image[] = []
   cardImages: P5.Image[] = []
@@ -132,6 +133,32 @@ export default class LoadScene {
       this.subjectIconImages[3] = p5.get(0, sqSize * 3, sqSize, sqSize)
     },
 
+    // create main background image
+    () => {
+      const p5 = this.p5
+      p5.background(0)
+      p5.colorMode(p5.HSB, 255)
+      p5.strokeWeight(1)
+      p5.noFill()
+      for (let i = 0; i < 20; i++) {
+        p5.stroke((i * 12) % 255, 255, 100)
+        var x = i * 45
+        var y = i * -18
+        p5.bezier(
+          22 + x,
+          -3 + y,
+          -880 + x,
+          813 + y,
+          630 + x,
+          114 + y,
+          -256 + x,
+          995 + y
+        )
+      }
+      p5.colorMode(p5.RGB)
+      this.backgroundImage = p5.get(0, 0, p5.width, p5.height)
+    },
+
     /// star, cardBackside, projectPanels, other texts
   ]
 
@@ -141,8 +168,104 @@ export default class LoadScene {
 
   private createCardImage() {
     const p5 = this.p5
+    p5.clear()
+    // card size: 100 x 160
+    const cardIndex = this.cardImages.length
+    const oc = originalCards[cardIndex]
+    const subjectColor = p5.color(...this.SUBJECT_COLORS[oc.subject])
+    const cardBgColor = p5.lerpColor(
+      p5.color(subjectColor),
+      p5.color(this.GRAY_COLOR),
+      0.7
+    )
 
-    ///  this.cardImages.push(p5.get())
+    // bg fill
+    p5.noStroke()
+    p5.fill(cardBgColor)
+    p5.rect(50, 80, 95, 155, 20)
+
+    // corner fill
+    p5.fill(subjectColor)
+    p5.rect(20, 20, 35, 30, 15)
+    p5.rect(80, 140, 35, 30, 15)
+
+    // bg arcs
+    p5.strokeCap(p5.SQUARE)
+    p5.noFill()
+    p5.strokeWeight(12)
+    for (let ai = 0; ai < 8; ai++) {
+      p5.stroke(
+        p5.lerpColor(
+          p5.color(subjectColor),
+          p5.color(cardBgColor),
+          (ai + 1) * 0.118
+        )
+      )
+      p5.arc(
+        3,
+        3,
+        60 + 10 * ai + 10 * (ai >> 1),
+        40 + 20 * ai - 10 * (ai >> 1),
+        0,
+        1.58
+      )
+      p5.arc(
+        97,
+        157,
+        60 + 10 * ai + 10 * (ai >> 1),
+        40 + 20 * ai - 10 * (ai >> 1),
+        3.14,
+        4.72
+      )
+    }
+    p5.strokeCap(p5.ROUND)
+
+    // avatar
+    p5.image(
+      this.gc.avatarSheet!,
+      50,
+      70,
+      85,
+      85,
+      200 * (cardIndex % 4),
+      200 * p5.floor(cardIndex / 4),
+      200,
+      200
+    )
+
+    // name
+    const nameHalfWidth =
+      customFont.render(oc.name, -200, -200, 12, p5.color(0, 0), p5) / 2
+    customFont.render(
+      oc.name,
+      50 - nameHalfWidth + 2,
+      120 + 1,
+      12,
+      p5.color(0),
+      p5
+    )
+    customFont.render(oc.name, 50 - nameHalfWidth, 120, 12, p5.color(250), p5)
+
+    // ability
+    this.renderAbilityIcon(oc, 50, 138, 0.5)
+
+    // darkening rect
+    p5.noFill()
+    for (let ri = 1; ri < 5; ri++) {
+      p5.strokeWeight(6 - 0.5 * ri)
+      p5.stroke(0, ri * 40)
+      p5.rect(50, 80, 85 + 2 * ri, 145 + 2 * ri, 20)
+    }
+
+    // boundary
+    p5.noFill()
+    p5.strokeWeight(2.5)
+    p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.5))
+    p5.rect(50, 80, 97, 157, 20)
+    p5.strokeWeight(2)
+    p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.4))
+    p5.rect(50, 80, 94, 154, 20)
+    this.cardImages.push(p5.get(0, 0, p5.width / 6, (p5.width / 600) * 160))
   }
 
   // used when creating card images & rendering ability description
@@ -198,109 +321,14 @@ export default class LoadScene {
   public draw() {
     const p5 = this.p5
 
-    p5.background(10)
+    p5.background(50, 50, 0)
     // p5.scale(3.5) ////
 
-    // card size: 100 x 160
-    const cardIndex = p5.floor(p5.frameCount * 0.02) % 32
-    const oc = originalCards[cardIndex]
-    const subjectColor = p5.color(...this.SUBJECT_COLORS[oc.subject])
-    const cardBgColor = p5.lerpColor(
-      p5.color(subjectColor),
-      p5.color(this.GRAY_COLOR),
-      0.7
-    )
+    if (this.backgroundImage) p5.image(this.backgroundImage, 300, 300, 600, 600)
 
-    // bg fill
-    p5.noStroke()
-    p5.fill(cardBgColor)
-    p5.rect(50, 80, 95, 155, 20)
-
-    // corner fill
-    p5.fill(subjectColor)
-    p5.rect(20, 20, 35, 30, 15)
-    p5.rect(80, 140, 35, 30, 15)
-
-    // bg arcs
-    p5.strokeCap(p5.SQUARE)
-    p5.noFill()
-    p5.strokeWeight(12)
-    for (let ai = 0; ai < 8; ai++) {
-      p5.stroke(
-        p5.lerpColor(
-          p5.color(subjectColor),
-          p5.color(cardBgColor),
-          (ai + 1) * 0.118
-        )
-      )
-      p5.arc(
-        3,
-        3,
-        60 + 10 * ai + 10 * (ai >> 1),
-        40 + 20 * ai - 10 * (ai >> 1),
-        0,
-        1.58
-      )
-      p5.arc(
-        97,
-        157,
-        60 + 10 * ai + 10 * (ai >> 1),
-        40 + 20 * ai - 10 * (ai >> 1),
-        3.14,
-        -1.58
-      )
-    }
-    p5.strokeCap(p5.ROUND)
-
-    // avatar
-    p5.image(
-      this.gc.avatarSheet!,
-      50,
-      70,
-      85,
-      85,
-      200 * (cardIndex % 4),
-      200 * p5.floor(cardIndex / 4),
-      200,
-      200
-    )
-
-    // name
-    const nameHalfWidth =
-      customFont.render(oc.name, -200, -200, 12, p5.color(0, 0), p5) / 2
-    customFont.render(
-      oc.name,
-      50 - nameHalfWidth + 2,
-      120 + 1,
-      12,
-      p5.color(0),
-      p5
-    )
-    customFont.render(oc.name, 50 - nameHalfWidth, 120, 12, p5.color(250), p5)
-
-    // ability
-    this.renderAbilityIcon(oc, 50, 138, 0.5)
-
-    // darkening rect
-    p5.noFill()
-    for (let ri = 1; ri < 5; ri++) {
-      p5.strokeWeight(6 - 0.5 * ri)
-      p5.stroke(0, ri * 40)
-      p5.rect(50, 80, 85 + 2 * ri, 145 + 2 * ri, 20)
-    }
-
-    // power ///
-    customFont.render("123", 15, 35, 20, p5.color(0), p5)
-    customFont.render("123", 13, 33, 20, p5.color(250), p5)
-
-    // boundary
-    p5.noFill()
-    p5.strokeWeight(2.5)
-    p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.5))
-    p5.rect(50, 80, 97, 157, 20)
-    p5.strokeWeight(2)
-    p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.4))
-    p5.rect(50, 80, 94, 154, 20)
+    const cardIndex = 2 // p5.floor(p5.frameCount * 0.02) % 32
+    const cimg = this.cardImages[cardIndex]
+    if (cimg) p5.image(cimg, 300, 300, 100, 160)
 
     /// animated spinner
   }
