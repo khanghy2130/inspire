@@ -159,7 +159,125 @@ export default class LoadScene {
       this.backgroundImage = p5.get(0, 0, p5.width, p5.height)
     },
 
-    /// star, cardBackside, projectPanels, other texts
+    // create star image (60x60) & card backside
+    () => {
+      const p5 = this.p5
+      p5.clear()
+      p5.push()
+      p5.translate(330, 30)
+      p5.rotate((p5.PI / 2) * 3)
+
+      const angle = p5.TWO_PI / 5
+      const halfAngle = angle / 2
+      const outerR = 27
+      const innerR = 15
+
+      // outline
+      p5.fill(0)
+      p5.strokeWeight(5)
+      p5.stroke(0)
+      p5.beginShape()
+      for (let i = 0; i < 5; i++) {
+        p5.vertex(p5.cos(i * angle) * outerR, p5.sin(i * angle) * outerR)
+        p5.vertex(
+          p5.cos(i * angle + halfAngle) * innerR,
+          p5.sin(i * angle + halfAngle) * innerR
+        )
+      }
+      p5.endShape(p5.CLOSE)
+      // inner fill
+      p5.noStroke()
+      for (let i = 0; i < 5; i++) {
+        let outer1 = [p5.cos(i * angle) * outerR, p5.sin(i * angle) * outerR]
+        let inner = [
+          p5.cos(i * angle + halfAngle) * innerR,
+          p5.sin(i * angle + halfAngle) * innerR,
+        ]
+        let outer2 = [
+          p5.cos((i + 1) * angle) * outerR,
+          p5.sin((i + 1) * angle) * outerR,
+        ]
+
+        // Triangle 1
+        p5.fill(225, 225, 15)
+        p5.triangle(outer1[0], outer1[1], inner[0], inner[1], 0, 0)
+        // Triangle 2
+        p5.fill(255, 255, 100)
+        p5.triangle(inner[0], inner[1], outer2[0], outer2[1], 0, 0)
+      }
+      p5.pop()
+      this.starImage = p5.get(p5.width / 2, 0, p5.width * 0.1, p5.width * 0.1)
+
+      // card backside
+      const subjectColor = p5.color(150)
+      const cardBgColor = p5.lerpColor(
+        p5.color(subjectColor),
+        p5.color(this.GRAY_COLOR),
+        0.7
+      )
+
+      // bg fill
+      p5.noStroke()
+      p5.fill(cardBgColor)
+      p5.rect(50, 80, 95, 155, 20)
+
+      // corner fill
+      p5.fill(subjectColor)
+      p5.rect(20, 20, 35, 30, 15)
+      p5.rect(80, 140, 35, 30, 15)
+
+      // bg arcs
+      p5.strokeCap(p5.SQUARE)
+      p5.noFill()
+      p5.strokeWeight(12)
+      for (let ai = 0; ai < 8; ai++) {
+        p5.stroke(
+          p5.lerpColor(
+            p5.color(subjectColor),
+            p5.color(cardBgColor),
+            (ai + 1) * 0.118
+          )
+        )
+        p5.arc(
+          3,
+          3,
+          60 + 10 * ai + 10 * (ai >> 1),
+          40 + 20 * ai - 10 * (ai >> 1),
+          0,
+          1.58
+        )
+        p5.arc(
+          97,
+          157,
+          60 + 10 * ai + 10 * (ai >> 1),
+          40 + 20 * ai - 10 * (ai >> 1),
+          3.14,
+          4.72
+        )
+      }
+      p5.strokeCap(p5.ROUND)
+      p5.image(this.starImage, 50, 80, 50, 50)
+
+      // darkening rect
+      p5.noFill()
+      for (let ri = 1; ri < 5; ri++) {
+        p5.strokeWeight(6 - 0.5 * ri)
+        p5.stroke(0, ri * 40)
+        p5.rect(50, 80, 85 + 2 * ri, 145 + 2 * ri, 20)
+      }
+
+      // boundary
+      p5.noFill()
+      p5.strokeWeight(2.5)
+      p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.5))
+      p5.rect(50, 80, 97, 157, 20)
+      p5.strokeWeight(2)
+      p5.stroke(p5.lerpColor(subjectColor, p5.color(0), 0.4))
+      p5.rect(50, 80, 94, 154, 20)
+      this.cardBackside = p5.get(0, 0, p5.width / 6, (p5.width / 600) * 160)
+    },
+
+    ///  projectBgs + white, other texts
   ]
 
   constructor(gameClient: GameClient) {
@@ -326,9 +444,33 @@ export default class LoadScene {
 
     if (this.backgroundImage) p5.image(this.backgroundImage, 300, 300, 600, 600)
 
-    const cardIndex = 2 // p5.floor(p5.frameCount * 0.02) % 32
+    const cardIndex = p5.floor(p5.frameCount * 0.02) % 32
     const cimg = this.cardImages[cardIndex]
-    if (cimg) p5.image(cimg, 300, 300, 100, 160)
+    if (cimg) {
+      for (let i = 0; i < 6; i++) {
+        p5.image(cimg, 75 + i * 90, 500, 100, 160)
+      }
+    }
+
+    p5.stroke(250)
+    p5.fill(0)
+    for (let i = 0; i < 4; i++) {
+      // 250 x 70
+      p5.rect(170, 60 + i * 90, 300, 70, 100)
+    }
+
+    customFont.render(
+      "engineering",
+      45,
+      55,
+      16,
+      p5.color(...this.SUBJECT_COLORS[0]),
+      p5
+    )
+
+    if (this.starImage) {
+      p5.image(this.cardBackside, this.gc.mx, this.gc.my - 60, 100, 160)
+    }
 
     /// animated spinner
   }
