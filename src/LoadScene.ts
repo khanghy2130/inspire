@@ -3,6 +3,18 @@ import { customFont } from "./font"
 import originalCards, { OriginalCard } from "./originalCards"
 import GameClient from "./main"
 
+type ProjectGraphics = {
+  light: P5.Graphics[]
+  dark: P5.Graphics[]
+  white: P5.Graphics
+}
+
+type colorData = {
+  a: [number, number, number]
+  b: [number, number, number]
+  c: number
+}
+
 export default class LoadScene {
   gc: GameClient
   p5!: P5
@@ -11,8 +23,8 @@ export default class LoadScene {
   starImage!: P5.Image
   cardBackside!: P5.Image
   backgroundImage!: P5.Image
+  projectGraphics!: ProjectGraphics
   subjectIconImages: P5.Image[] = []
-  projectPanelImages: P5.Image[] = []
   cardImages: P5.Image[] = []
 
   readonly SUBJECT_COLORS: [number, number, number][] = [
@@ -277,11 +289,82 @@ export default class LoadScene {
       this.cardBackside = p5.get(0, 0, p5.width / 6, (p5.width / 600) * 160)
     },
 
-    ///  projectBgs + white, other texts
+    // create projectGraphics (280 x 70)
+    () => {
+      const cpg = this.createProjectGraphics.bind(this)
+      const black: [number, number, number] = [50, 50, 50]
+      this.projectGraphics = {
+        light: this.SUBJECT_COLORS.map((scNums) => {
+          return cpg(
+            {
+              a: scNums,
+              b: black,
+              c: 0.3,
+            },
+            {
+              a: scNums,
+              b: black,
+              c: 0.8,
+            }
+          )
+        }),
+        dark: this.SUBJECT_COLORS.map((scNums) => {
+          return cpg(
+            {
+              a: scNums,
+              b: black,
+              c: 0.8,
+            },
+            {
+              a: scNums,
+              b: black,
+              c: 0.3,
+            }
+          )
+        }),
+        white: cpg(
+          {
+            a: [230, 230, 230],
+            b: black,
+            c: 0,
+          },
+          {
+            a: [170, 170, 170],
+            b: black,
+            c: 0,
+          }
+        ),
+      }
+    },
+
+    ///   other texts
   ]
 
   constructor(gameClient: GameClient) {
     this.gc = gameClient
+  }
+
+  private createProjectGraphics(c1: colorData, c2: colorData): P5.Graphics {
+    const p5 = this.p5
+    const gp = p5.createGraphics(280, 70, p5.P2D)
+
+    const color1 = p5.lerpColor(p5.color(...c1.a), p5.color(...c1.b), c1.c)
+    const color2 = p5.lerpColor(p5.color(...c2.a), p5.color(...c2.b), c2.c)
+
+    gp.background(0, 0)
+    gp.noStroke()
+    gp.fill(color1)
+    gp.rect(0, 0, 280, 70, 100)
+
+    gp.noFill()
+    gp.strokeWeight(12)
+    gp.stroke(color2)
+    gp.bezier(20, 40, 70, 30, 80, -18, 90, -10)
+    gp.bezier(60, 50, 75, 40, 116, 25, 150, 80)
+    gp.bezier(100, -35, 151, 49, 176, 52, 207, 80)
+    gp.bezier(162, -5, 194, 32, 220, 12, 240, -5)
+
+    return gp
   }
 
   private createCardImage() {
@@ -417,6 +500,24 @@ export default class LoadScene {
     p5.pop()
   }
 
+  public renderProjectGraphics(
+    gp: P5.Graphics,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number
+  ) {
+    //$
+    const p5 = this.p5
+    p5.imageMode(p5.CORNER)
+    p5.image(gp, dx, dy, dw, dh, sx, sy, sw, sh)
+    p5.imageMode(p5.CENTER)
+  }
+
   public update() {
     // create other images with functions in list
     if (this.imagesCreateFunctions.length > 0) {
@@ -452,25 +553,64 @@ export default class LoadScene {
       }
     }
 
-    p5.stroke(250)
-    p5.fill(0)
-    for (let i = 0; i < 4; i++) {
-      // 250 x 70
-      p5.rect(170, 60 + i * 90, 300, 70, 100)
+    if (this.projectGraphics) {
+      const gps = this.projectGraphics.light
+      for (let i = 0; i < 4; i++) {
+        this.renderProjectGraphics(
+          gps[i],
+          10,
+          25 + i * 85,
+          280,
+          70,
+          0,
+          0,
+          280,
+          70
+        )
+      }
+      const gps2 = this.projectGraphics.dark
+      for (let i = 0; i < 4; i++) {
+        this.renderProjectGraphics(
+          gps2[i],
+          310,
+          25 + i * 85,
+          280,
+          70,
+          0,
+          0,
+          280,
+          70
+        )
+      }
+      this.renderProjectGraphics(
+        this.projectGraphics.white,
+        10,
+        370,
+        280,
+        70,
+        0,
+        0,
+        280,
+        70
+      )
     }
 
-    customFont.render(
-      "engineering",
-      45,
-      55,
-      16,
-      p5.color(...this.SUBJECT_COLORS[0]),
-      p5
-    )
+    if (this.subjectIconImages.length !== 0) {
+      p5.image(this.subjectIconImages[0], 45, 48, 30, 30)
+    }
+    customFont.render("engineering", 72, 57, 17, p5.color(0), p5)
+    customFont.render("engineering", 70, 55, 17, p5.color(250), p5)
+
+    customFont.render("35", 227, 90, 25, p5.color(0), p5)
+    customFont.render("35", 225, 88, 25, p5.color(250), p5)
 
     if (this.starImage) {
-      p5.image(this.cardBackside, this.gc.mx, this.gc.my - 60, 100, 160)
+      p5.image(this.cardBackside, 450, 180, 100, 160)
+      customFont.render("26", 436, 136, 18, p5.color(0), p5)
+      customFont.render("26", 435, 135, 18, p5.color(250), p5)
     }
+
+    customFont.render("help", 530, 120, 12, p5.color(250), p5)
 
     /// animated spinner
   }
