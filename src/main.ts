@@ -5,6 +5,7 @@ import MenuScene from "./MenuScene"
 import { customFont } from "./font"
 import LoadScene from "./LoadScene"
 import SceneController from "./SceneController"
+import Button from "./Button"
 
 export default class GameClient {
   // rescaled mouse position (0 to 400 width)
@@ -12,6 +13,7 @@ export default class GameClient {
   my: number = 0
   touchCountdown: number = 0
   avatarSheet?: P5.Image
+  buttons: Button[] = []
 
   constructor() {
     const loadScene = new LoadScene(this)
@@ -24,7 +26,7 @@ export default class GameClient {
         const HEIGHT_RATIO = 1
         const CANVAS_WIDTH = Math.min(
           window.innerWidth,
-          window.innerHeight / HEIGHT_RATIO
+          window.innerHeight / HEIGHT_RATIO,
         )
         return [CANVAS_WIDTH, CANVAS_WIDTH * HEIGHT_RATIO]
       }
@@ -44,7 +46,7 @@ export default class GameClient {
           w,
           h,
           p5.P2D,
-          document.getElementById("game-canvas") as HTMLCanvasElement
+          document.getElementById("game-canvas") as HTMLCanvasElement,
         )
 
         // p5 configs
@@ -65,6 +67,19 @@ export default class GameClient {
         playScene.p5 = p5
 
         sceneController.p5 = p5
+
+        // create all buttons
+        this.buttons = (
+          [[300, 500, 250, 70, "play", 30, () => {}]] as [
+            number,
+            number,
+            number,
+            number,
+            string,
+            number,
+            Function,
+          ][]
+        ).map((bd) => new Button(...bd, p5))
       }
 
       p5.draw = () => {

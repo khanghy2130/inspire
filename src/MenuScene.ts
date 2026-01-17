@@ -13,11 +13,16 @@ export default class MenuScene {
   }
 
   draw() {
-    const { p5, loadScene } = this
+    const { p5, loadScene, gc } = this
 
     loadScene.renderMainBackground()
     p5.noStroke()
+
+    gc.buttons[0].render(gc.mx, gc.my)
   }
 
-  click() {}
+  click() {
+    const gc = this.gc
+    if (gc.buttons[0].isHovered) gc.buttons[0].clicked()
+  }
 }

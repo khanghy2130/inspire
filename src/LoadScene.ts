@@ -358,13 +358,13 @@ export default class LoadScene {
     gp.fill(color1)
     gp.rect(0, 0, 280, 70, 100)
 
-    gp.noFill()
-    gp.strokeWeight(12)
-    gp.stroke(color2)
-    gp.bezier(20, 40, 70, 30, 80, -18, 90, -10)
-    gp.bezier(60, 50, 75, 40, 116, 25, 150, 80)
-    gp.bezier(100, -35, 151, 49, 176, 52, 207, 80)
-    gp.bezier(162, -5, 194, 32, 220, 12, 240, -5)
+    gp.fill(color2)
+    gp.beginShape()
+    gp.vertex(245, -5)
+    gp.bezierVertex(200, 60, 130, 30, 125, 75)
+    gp.vertex(35, 75)
+    gp.bezierVertex(85, 10, 180, 60, 200, -5)
+    gp.endShape(gp.CLOSE)
 
     return gp
   }
@@ -554,7 +554,7 @@ export default class LoadScene {
       this.renderMainBackground()
       customFont.render("loading", 200, 310, 35, p5.color(250), p5)
     }
-    return
+    // return
 
     const cardIndex = p5.floor(p5.frameCount * 0.02) % 32
     const cimg = this.cardImages[cardIndex]
