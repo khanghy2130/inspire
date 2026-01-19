@@ -23,35 +23,35 @@ export default class MenuScene {
     const fcx = ((fc * 100) % 650) - 20
 
     // behind
-    p5.noStroke()
-    for (let x = -10; x < 610; x += 2) {
+    p5.strokeWeight(15)
+    for (let x = -4; x < 604; x += 2) {
       const rad = x * 0.02 + fc
       // is going down?
       const s = p5.sin(rad)
       if (-s > 0) {
-        p5.fill(
+        p5.stroke(
           (rad * 10 + fc * 40) % 255,
           255 - (x > fcx - 30 && x < fcx + 30 ? 255 : 0),
           155 + s * 100,
         )
-        p5.circle(x, 210 + p5.cos(rad) * 100, 15)
+        p5.point(x, 210 + p5.cos(rad) * 100)
       }
     }
 
     customFont.render("inspire", 50, 260, 90, p5.color(255, 0, 230), p5)
 
     // front
-    for (let x = -10; x < 610; x += 2) {
+    for (let x = -4; x < 604; x += 2) {
       const rad = x * 0.02 + fc
       // is going up?
       const s = p5.sin(rad)
       if (-s <= 0) {
-        p5.fill(
+        p5.stroke(
           (rad * 10 + fc * 40) % 255,
           255 - (x > fcx - 30 && x < fcx + 30 ? 255 : 0),
           155 + s * 100,
         )
-        p5.circle(x, 210 + p5.cos(rad) * 100, 15)
+        p5.point(x, 210 + p5.cos(rad) * 100)
       }
     }
 

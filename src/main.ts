@@ -7,6 +7,16 @@ import LoadScene from "./LoadScene"
 import SceneController from "./SceneController"
 import Button from "./Button"
 
+declare global {
+  type PositionType = [number, number]
+
+  // subject: science, technology, engineering, math
+  type SubjectType = 0 | 1 | 2 | 3
+  type BodyType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+  // ability: byName | byBody | byGender | bySubject | byRandom
+  type AbilityType = 0 | 1 | 2 | 3 | 4
+}
+
 export default class GameClient {
   // rescaled mouse position (0 to 400 width)
   mx: number = 0
@@ -66,8 +76,10 @@ export default class GameClient {
         menuScene.sceneController = sceneController
 
         playScene.p5 = p5
+        playScene.loadScene = loadScene
 
         sceneController.p5 = p5
+        sceneController.playScene = playScene
 
         // create all buttons
         this.buttons = (
@@ -121,6 +133,14 @@ export default class GameClient {
             return
           case "PLAY":
             playScene.click()
+            return
+        }
+      }
+
+      p5.keyReleased = () => {
+        switch (sceneController.scene) {
+          case "PLAY":
+            playScene.keyReleased()
             return
         }
       }

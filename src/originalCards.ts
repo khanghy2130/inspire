@@ -1,9 +1,3 @@
-// subject: science, technology, engineering, math
-export type SubjectType = 0 | 1 | 2 | 3
-export type BodyType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
-// ability: byName | byBody | byGender | bySubject | byRandom
-export type AbilityType = 0 | 1 | 2 | 3 | 4
-
 export type OriginalCard = {
   name: string
   isMale: boolean

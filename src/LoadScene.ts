@@ -474,26 +474,30 @@ export default class LoadScene {
     p5.push()
     p5.translate(x, y)
     p5.scale(s)
+
+    p5.fill(250)
+    p5.stroke(0)
+    p5.textSize(40)
     switch (oc.ability) {
       // by name
       case 0:
-        p5.image(this.subjectIconImages[0], 0, 0, 50, 50)
+        p5.text(oc.name[0].toUpperCase(), 0, 0)
         break
       // by body
       case 1:
-        p5.image(this.subjectIconImages[1], 0, 0, 50, 50)
+        p5.text("body", 0, 0)
         break
       // by gender
       case 2:
-        p5.image(this.subjectIconImages[2], 0, 0, 50, 50)
+        p5.text((oc.isMale ? "male" : "female") + "<", 0, 0)
         break
       // by subject
       case 3:
-        p5.image(this.subjectIconImages[3], 0, 0, 50, 50)
+        p5.text("adj", 0, 0)
         break
       // by random
       case 4:
-        p5.image(this.subjectIconImages[0], 0, 0, 50, 50)
+        p5.text("random", 0, 0)
         break
     }
     p5.pop()
@@ -510,7 +514,7 @@ export default class LoadScene {
     sw: number,
     sh: number,
   ) {
-    //$
+    //$ use drawImage()
     const p5 = this.p5
     p5.imageMode(p5.CORNER)
     p5.image(gp, dx, dy, dw, dh, sx, sy, sw, sh)
@@ -538,17 +542,18 @@ export default class LoadScene {
 
     // all done
     if (this.sceneController.isNotTransitioning()) {
-      this.sceneController.setScene("MENU")
+      this.sceneController.setScene("PLAY")
     }
   }
 
   public draw() {
     const p5 = this.p5
 
-    p5.background(0)
-    if (this.backgroundImage) {
+    if (this.starImage) {
       this.renderMainBackground()
       customFont.render("loading", 200, 310, 35, p5.color(250), p5)
+    } else {
+      p5.background(0)
     }
     return
 
