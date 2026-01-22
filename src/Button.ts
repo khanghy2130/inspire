@@ -13,6 +13,8 @@ export default class Button {
   strSize: number
   strX: number
   strY: number
+  c1: P5.Color
+  c2: P5.Color
   clicked: Function
 
   constructor(
@@ -22,6 +24,7 @@ export default class Button {
     h: number,
     str: string,
     strSize: number,
+    colorValue: P5.Color,
     clicked: Function,
     p5: P5,
   ) {
@@ -37,6 +40,9 @@ export default class Button {
     this.strX =
       customFont.render(str, -100, -100, strSize, p5.color(0, 0), p5) * 0.5
     this.strY = -strSize * 0.5
+
+    this.c1 = colorValue
+    this.c2 = p5.lerpColor(colorValue, p5.color(0), 0.15)
 
     this.clicked = () => {
       this.prg = 0
@@ -74,9 +80,9 @@ export default class Button {
 
     // render button
     p5.noStroke()
-    p5.fill(176, 77, 142)
+    p5.fill(this.c1)
     p5.rect(this.x, this.y - this.h / 4, this.w, this.h / 2, 15, 15, 0, 0)
-    p5.fill(160, 60, 125)
+    p5.fill(this.c2)
     p5.rect(this.x, this.y + this.h / 4, this.w, this.h / 2, 0, 0, 15, 15)
 
     const f = 1 - this.prg

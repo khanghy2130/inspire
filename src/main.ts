@@ -91,11 +91,21 @@ export default class GameClient {
               70,
               "play",
               30,
+              p5.color(176, 77, 142),
               () => {
                 sceneController.setScene("PLAY")
               },
             ],
-          ] as [number, number, number, number, string, number, Function][]
+          ] as [
+            number,
+            number,
+            number,
+            number,
+            string,
+            number,
+            P5.Color,
+            Function,
+          ][]
         ).map((bd) => new Button(...bd, p5))
       }
 
