@@ -17,6 +17,10 @@ declare global {
   type AbilityType = 0 | 1 | 2 | 3 | 4
 }
 
+export function getRandomItem<T>(arr: T[]): T {
+  return arr[arr.length * Math.random()]
+}
+
 export default class GameClient {
   // rescaled mouse position (0 to 400 width)
   mx: number = 0
