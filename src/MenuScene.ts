@@ -57,8 +57,8 @@ export default class MenuScene {
 
     // update menu button colors
     const menuButton = gc.buttons[0]
-    menuButton.c1 = p5.color((fc * 40) % 255, 255, 150)
-    menuButton.c2 = p5.color((fc * 40) % 255, 255, 130)
+    menuButton.c1 = p5.color((fc * 20) % 255, 255, 140)
+    menuButton.c2 = p5.color((fc * 20) % 255, 255, 120)
 
     p5.colorMode(p5.RGB)
 

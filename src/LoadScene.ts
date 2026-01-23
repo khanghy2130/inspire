@@ -505,14 +505,14 @@ export default class LoadScene {
 
   public renderProjectGraphics(
     gp: P5.Graphics,
-    dx: number,
-    dy: number,
-    dw: number,
-    dh: number,
     sx: number,
     sy: number,
     sw: number,
     sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
   ) {
     //$ use drawImage()
     const p5 = this.p5
@@ -542,7 +542,7 @@ export default class LoadScene {
 
     // all done
     if (this.sceneController.isNotTransitioning()) {
-      this.sceneController.setScene("PLAY")
+      this.sceneController.setScene("MENU")
     }
   }
 
@@ -571,12 +571,12 @@ export default class LoadScene {
       for (let i = 0; i < 4; i++) {
         this.renderProjectGraphics(
           gps[i],
-          10,
-          25 + i * 85,
+          0,
+          0,
           280,
           70,
-          0,
-          0,
+          10,
+          25 + i * 85,
           280,
           70,
         )
@@ -585,24 +585,24 @@ export default class LoadScene {
       for (let i = 0; i < 4; i++) {
         this.renderProjectGraphics(
           gps2[i],
-          310,
-          25 + i * 85,
+          0,
+          0,
           280,
           70,
-          0,
-          0,
+          310,
+          25 + i * 85,
           280,
           70,
         )
       }
       this.renderProjectGraphics(
         this.projectGraphics.white,
-        10,
-        370,
+        0,
+        0,
         280,
         70,
-        0,
-        0,
+        10,
+        370,
         280,
         70,
       )

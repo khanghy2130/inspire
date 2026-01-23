@@ -21,6 +21,10 @@ export function getRandomItem<T>(arr: T[]): T {
   return arr[arr.length * Math.random()]
 }
 
+export function easeOutCubic(x: number): number {
+  return 1 - Math.pow(1 - x, 3)
+}
+
 export default class GameClient {
   // rescaled mouse position (0 to 400 width)
   mx: number = 0

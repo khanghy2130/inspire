@@ -73,7 +73,7 @@ export default class Button {
 
     const ANIMATE_SPEED = 0.05
     if (this.isHovered) {
-      this.prg = p5.min(this.prg + ANIMATE_SPEED, 0.7)
+      this.prg = p5.min(this.prg + ANIMATE_SPEED, 0.6)
     } else {
       this.prg = p5.min(this.prg + ANIMATE_SPEED, 1)
     }
@@ -86,7 +86,7 @@ export default class Button {
     p5.rect(this.x, this.y + this.h / 4, this.w, this.h / 2, 0, 0, 15, 15)
 
     const f = 1 - this.prg
-    p5.strokeWeight(f * 10)
+    p5.strokeWeight(f * 7)
     p5.noFill()
     p5.stroke(250)
     p5.rect(this.x, this.y, this.w, this.h, 15)

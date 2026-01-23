@@ -1,5 +1,5 @@
 import type P5 from "p5"
-import GameClient from "./main"
+import GameClient, { easeOutCubic } from "./main"
 import { customFont } from "./font"
 import LoadScene from "./LoadScene"
 import originalCards, { OriginalCard } from "./originalCards"
@@ -8,6 +8,8 @@ type PlayingCard = {
   oc: OriginalCard
   power: number
   index: number
+  squishPrg: number
+  flipPrg: number // 0.5 is half way
 }
 
 type Project = {
@@ -19,13 +21,26 @@ type Project = {
 }
 
 type ProjectController = {
+  readonly CENTERS: PositionType[]
+  projectMaxHP: number
   queue: Project[]
   hitController: {
-    targetProject: Project | null // is null after removed or done draining
-    squishPrg: number
-    squishStrength: number
-    drainPrg: number // starts at negative to delay, also apply to flasher
-    isPerfectCompletion: boolean
+    // is null after removed or done draining
+    target: {
+      project: Project
+      squishPrg: number
+      squishStrength: number
+      drainPrg: number // starts at negative to delay, also apply to flasher
+      result: "INCOMPLETE" | "COMPLETE" | "PERFECT"
+    } | null
+
+    deployed: {
+      card: PlayingCard
+      targetRotation: number
+      startPos: PositionType
+      projectCenter: PositionType
+      isCharging: boolean
+    } | null
 
     // update energy & completedAmount on removed
     laser: {
@@ -45,9 +60,11 @@ type ProjectController = {
       rotationVel: number // gets smaller
     } | null
   }
+  inputIsBlocked: () => boolean
   add: (subject: SubjectType) => void
-  damage: (subject: SubjectType) => void
+  damage: (subject: SubjectType, hitAmount: number) => void
   remove: (subject: SubjectType) => void
+  render: () => void
 }
 
 export default class PlayScene {
@@ -60,35 +77,100 @@ export default class PlayScene {
     PlayingCard[]
   >
 
-  stats: Record<"energy" | "completedAmount" | "projectMaxHP", number> = {
+  stats: Record<"energy" | "completedAmount", number> = {
     energy: 0,
     completedAmount: 0,
-    projectMaxHP: 10,
   }
 
   projectController: ProjectController = {
+    CENTERS: [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
+    projectMaxHP: 10,
     queue: [],
     hitController: {
-      targetProject: null,
-      squishPrg: 0,
-      squishStrength: 0,
-      drainPrg: 0,
-      isPerfectCompletion: false,
-
-      laser: {
-        prg: 0,
-        indexInQueue: 0,
-        startDeg: 0,
-        endDeg: 0,
-      },
+      target: null,
+      deployed: null,
+      laser: null,
       flyer: null,
     },
-    add: (subject) => {},
-    damage: (subject) => {},
+    inputIsBlocked: () => {
+      // input is blocked target is completed
+      const target = this.projectController.hitController.target
+      return target !== null && target.result !== "INCOMPLETE"
+    },
+    add: (subject) => {
+      const projectController = this.projectController
+      const maxHp = projectController.projectMaxHP
+      projectController.projectMaxHP += 5 // increase
+      projectController.queue.push({
+        subject,
+        hp: maxHp,
+        maxHp: maxHp,
+        spawnPrg: -projectController.queue.length * 0.6, // start with delay
+        moveUpPrg: 1,
+      })
+    },
+    damage: (subject, hitAmount) => {},
     remove: (subject) => {
       // spawn flyer & lasers
       // set moveUpPrg for other projects
       // add new project
+    },
+    render: () => {
+      const p5 = this.p5
+      const queue = this.projectController.queue
+      let { projectGraphics, renderProjectGraphics } = this.loadScene
+      renderProjectGraphics = renderProjectGraphics.bind(this) //$
+
+      for (let i = 0; i < queue.length; i++) {
+        const project = queue[i]
+
+        // spawnPrg
+        project.spawnPrg = p5.min(project.spawnPrg + 0.016, 2)
+        const spawnXOffset =
+          (1 - easeOutCubic(p5.min(project.spawnPrg, 1))) * -300
+        // also after spawn display
+        const hpFactor =
+          project.spawnPrg < 2
+            ? easeOutCubic(p5.max(project.spawnPrg - 1, 0))
+            : (1 / project.maxHp) * project.hp
+
+        // dark panel
+        renderProjectGraphics(
+          projectGraphics.dark[project.subject],
+          0,
+          0,
+          280,
+          70,
+          10 + spawnXOffset,
+          20 + 85 * i,
+          280,
+          70,
+        )
+
+        // light panel
+        if (hpFactor > 0) {
+          renderProjectGraphics(
+            projectGraphics.light[project.subject],
+            0,
+            0,
+            280 * hpFactor,
+            70,
+            10 + spawnXOffset,
+            20 + 85 * i,
+            280 * hpFactor,
+            70,
+          )
+        }
+
+        // white panel (damaged)
+
+        // contents (hp display number is real hp + draining if is hit target)
+      }
     },
   }
 
@@ -101,7 +183,6 @@ export default class PlayScene {
     this.stats = {
       energy: 10,
       completedAmount: 0,
-      projectMaxHP: 10,
     }
     this.cards = {
       drawPile: [],
@@ -109,8 +190,10 @@ export default class PlayScene {
       hand: [],
       selectedCards: [],
     }
+    this.projectController.projectMaxHP = 10
     this.projectController.queue = []
-    this.projectController.hitController.targetProject = null
+    this.projectController.hitController.target = null
+    this.projectController.hitController.deployed = null
     this.projectController.hitController.laser = null
     this.projectController.hitController.flyer = null
 
@@ -119,6 +202,8 @@ export default class PlayScene {
       oc,
       power: 5,
       index: index,
+      squishPrg: 1,
+      flipPrg: 1,
     }))
 
     // add starting projects
@@ -134,10 +219,13 @@ export default class PlayScene {
     const { p5, loadScene } = this
     p5.cursor(p5.ARROW)
     p5.image(loadScene.backgroundImage, 300, 300, 600, 600)
+
+    this.projectController.render()
   }
 
   keyReleased() {
     const keyCode = this.p5.keyCode
+    // 1,2,3,4: hit projects
   }
 
   click() {
