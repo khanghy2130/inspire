@@ -57,10 +57,8 @@ type ProjectController = {
     laser: {
       isPerfect: boolean
       prg: number
-      indexInQueue: number // identify arcs
-      // deg (in radians) non-negative
-      startDeg: number
-      endDeg: number
+      // x,y,w,h, startAngle, endAngle
+      arcInfo: [number, number, number, number, number, number]
     } | null
 
     // independently updated and removed with no side effect
@@ -75,6 +73,8 @@ type ProjectController = {
   add: (subject: SubjectType) => void
   damage: (subject: SubjectType, hitAmount: number) => void
   renderProjects: () => void
+  renderFlyer: () => void
+  renderLaser: () => void
 }
 
 export default class PlayScene {
@@ -137,6 +137,7 @@ export default class PlayScene {
   }
 
   projectController: ProjectController = {
+    // X position is 150
     Y_POSITONS: [55, 140, 225, 310],
     projectMaxHP: 10,
     queue: [],
@@ -157,7 +158,7 @@ export default class PlayScene {
         spawnPrg:
           this.statsController.completedAmount === 0 && false ///
             ? -projectController.queue.length * 0.2
-            : 0,
+            : -1,
         moveUpPrg: 1,
       })
     },
@@ -196,8 +197,9 @@ export default class PlayScene {
     },
     renderProjects: () => {
       const p5 = this.p5
-      const queue = this.projectController.queue
-      const target = this.projectController.hitController.target
+      const projectController = this.projectController
+      const queue = projectController.queue
+      const target = projectController.hitController.target
       let { projectGraphics, renderProjectGraphics } = this.loadScene
       let doesRemoveTarget = false
 
@@ -215,7 +217,7 @@ export default class PlayScene {
           p5.fill(target.isPerfect ? p5.color(255, 255, 0) : p5.color(255))
           p5.rect(
             150,
-            this.projectController.Y_POSITONS[queue.indexOf(project)],
+            projectController.Y_POSITONS[queue.indexOf(project)],
             280 * (1 + f),
             70 * (1 - f),
             100,
@@ -304,7 +306,7 @@ export default class PlayScene {
               )
               p5.rect(
                 150,
-                this.projectController.Y_POSITONS[queue.indexOf(project)],
+                projectController.Y_POSITONS[queue.indexOf(project)],
                 280,
                 70,
                 100,
@@ -326,13 +328,72 @@ export default class PlayScene {
           }
           queue.splice(i, 1) // remove old project
           // add new project
-          this.projectController.add(target.project.subject)
+          projectController.add(target.project.subject)
 
-          console.log("flyer spawn & laser")
+          // spawn flyer
+          projectController.hitController.flyer = {
+            subject: target.project.subject,
+            pos: [150, projectController.Y_POSITONS[i]],
+            vel: [p5.random() * 4 + 1, -(p5.random() * 3 + 12)],
+            rotation: 0,
+            rotationVel: p5.random() * 0.03 + 0.1,
+          }
+
+          // spawn laser
+          const ARC_TABLE: [number, number, number, number, number, number][] =
+            [
+              // x,y,w,h, end angle, start angle
+              [305, 50, 310, 330, 0, p5.PI],
+              [300, 50, 320, 440, 0, p5.PI - 0.6],
+              [280, 50, 360, 550, 0, p5.PI - 0.95],
+              [270, 50, 380, 660, 0, p5.PI - 1.15],
+            ]
+          projectController.hitController.laser = {
+            isPerfect: target.isPerfect,
+            arcInfo: ARC_TABLE[i],
+            prg: 0,
+          }
         }
         // remove target
-        this.projectController.hitController.target = null
+        projectController.hitController.target = null
       }
+    },
+    renderFlyer: () => {
+      const p5 = this.p5
+      const flyer = this.projectController.hitController.flyer
+      if (!flyer) {
+        return
+      }
+      const flyerGraphics = this.loadScene.projectGraphics.dark[flyer.subject]
+
+      // update
+      flyer.pos[0] += flyer.vel[0]
+      flyer.pos[1] += flyer.vel[1]
+      flyer.vel[1] += 0.5 // gravity
+      flyer.rotation += flyer.rotationVel
+      flyer.rotationVel = p5.max(flyer.rotationVel - 0.001, 0)
+      if (flyer.pos[1] > 750) {
+        this.projectController.hitController.flyer = null // remove
+      }
+
+      p5.push()
+      p5.translate(flyer.pos[0], flyer.pos[1])
+      p5.rotate(flyer.rotation)
+      p5.image(flyerGraphics, 0, 0, 280, 70)
+      p5.pop()
+    },
+    renderLaser: () => {
+      const p5 = this.p5
+      const laser = this.projectController.hitController.laser
+      if (!laser) {
+        return
+      }
+      const [x, y, w, h, a1, a2] = laser.arcInfo
+      p5.noFill()
+      p5.stroke(255, 255, 0)
+      p5.strokeWeight(10)
+      p5.arc(x, y, w, h, a1, a2)
+      ///
     },
   }
 
@@ -375,13 +436,29 @@ export default class PlayScene {
   }
 
   draw() {
-    const { p5, loadScene } = this
+    const { p5, loadScene, projectController } = this
     p5.cursor(p5.ARROW)
     p5.image(loadScene.backgroundImage, 300, 300, 600, 600)
 
-    this.projectController.renderProjects()
+    projectController.renderProjects()
 
     this.statsController.render()
+    projectController.renderFlyer()
+    projectController.renderLaser()
+
+    // const Y_POSITONS = projectController.Y_POSITONS
+    // p5.stroke(255)
+    // p5.strokeWeight(10)
+    // for (let i = 0; i < Y_POSITONS.length; i++) {
+    //   p5.point(150, Y_POSITONS[i])
+    // }
+
+    // p5.noFill()
+    // p5.stroke(255, 255, 0, 100)
+    // p5.arc(305, 50, 310, 330, 0, p5.PI)
+    // p5.arc(300, 50, 320, 440, 0, p5.PI - 0.6)
+    // p5.arc(280, 50, 360, 550, 0, p5.PI - 0.95)
+    // p5.arc(270, 50, 380, 660, 0, p5.PI - 1.15)
   }
 
   keyReleased() {
@@ -389,9 +466,12 @@ export default class PlayScene {
     if (keyCode === 49) {
       this.projectController.damage(this.projectController.queue[0].subject, 15)
     } else if (keyCode === 50) {
-      this.projectController.damage(this.projectController.queue[1].subject, 5)
+      this.projectController.damage(this.projectController.queue[1].subject, 55)
     } else if (keyCode === 51) {
-      this.projectController.damage(this.projectController.queue[2].subject, 10)
+      this.projectController.damage(
+        this.projectController.queue[2].subject,
+        105,
+      )
     } else if (keyCode === 52) {
       this.projectController.damage(this.projectController.queue[3].subject, 25)
     }
