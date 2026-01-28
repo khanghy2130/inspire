@@ -475,29 +475,97 @@ export default class LoadScene {
     p5.translate(x, y)
     p5.scale(s)
 
-    p5.fill(250)
-    p5.stroke(0)
-    p5.textSize(40)
     switch (oc.ability) {
       // by name
       case 0:
-        p5.text(oc.name[0].toUpperCase(), 0, 0)
+        p5.noStroke()
+        p5.fill(20)
+        p5.rect(0, 0, 65, 45, 12)
+        const x = customFont.render(
+          oc.name[0],
+          -999,
+          999,
+          26,
+          p5.color(0, 0),
+          p5,
+        )
+        customFont.render(oc.name[0], -x * 0.66, 13, 26, p5.color(250), p5)
         break
       // by body
       case 1:
-        p5.text("body", 0, 0)
+        p5.stroke(0)
+        p5.strokeWeight(3)
+        p5.fill(240, 240, 50)
+        p5.ellipse(0, 0, 45, 45)
+        p5.noFill()
+        p5.arc(0, 0, 25, 25, 0.8, p5.PI - 0.8)
+        p5.fill(255)
+        p5.strokeWeight(2)
+        p5.ellipse(-10, -5, 15, 15)
+        p5.ellipse(10, -5, 15, 15)
+        p5.strokeWeight(7)
+        p5.point(-7, -6)
+        p5.point(13, -6)
         break
       // by gender
       case 2:
-        p5.text((oc.isMale ? "male" : "female") + "<", 0, 0)
+        p5.stroke(20)
+        p5.strokeWeight(12)
+        p5.noFill()
+        if (oc.isMale) {
+          p5.ellipse(-23, 4, 22, 22)
+          p5.line(-14, -5, -2, -17)
+          p5.line(-2, -2, -2, -17)
+          p5.line(-17, -17, -2, -17)
+
+          p5.line(12, 0, 42, 0)
+          p5.line(12, 0, 22, -10)
+          p5.line(12, 0, 22, 10)
+
+          p5.strokeWeight(5)
+          p5.stroke(80, 200, 250)
+          p5.ellipse(-23, 4, 22, 22)
+          p5.line(-14, -5, -4, -15)
+          p5.line(-2, -2, -2, -17)
+          p5.line(-17, -17, -2, -17)
+
+          p5.stroke(250)
+          p5.line(12, 0, 42, 0)
+          p5.line(12, 0, 22, -10)
+          p5.line(12, 0, 22, 10)
+        } else {
+          p5.ellipse(-20, -12, 22, 22)
+          p5.line(-20, 2, -20, 18)
+          p5.line(-28, 10, -12, 10)
+
+          p5.line(10, 0, 40, 0)
+          p5.line(10, 0, 20, -10)
+          p5.line(10, 0, 20, 10)
+
+          p5.strokeWeight(5)
+          p5.stroke(250, 120, 250)
+          p5.ellipse(-20, -12, 22, 22)
+          p5.line(-20, 2, -20, 18)
+          p5.line(-28, 10, -12, 10)
+
+          p5.stroke(250)
+          p5.line(10, 0, 40, 0)
+          p5.line(10, 0, 20, -10)
+          p5.line(10, 0, 20, 10)
+        }
         break
       // by subject
       case 3:
-        p5.text("adj", 0, 0)
+        const simg = this.subjectIconImages[oc.subject]
+        p5.image(simg, -22, 0, 45, 45)
+        p5.image(simg, 22, 0, 45, 45)
         break
       // by random
       case 4:
-        p5.text("random", 0, 0)
+        p5.noStroke()
+        p5.fill(20)
+        p5.ellipse(0, 0, 40, 40)
+        customFont.render("?", -10, 13, 24, p5.color(250), p5)
         break
     }
     p5.pop()
@@ -551,81 +619,21 @@ export default class LoadScene {
 
     if (this.starImage) {
       this.renderMainBackground()
-      customFont.render("loading", 200, 310, 35, p5.color(250), p5)
+      customFont.render("loading", 185, 310, 35, p5.color(250), p5)
     } else {
       p5.background(0)
     }
     return
 
     if (this.imagesCreateFunctions.length > 0) return
-    const cardIndex = p5.floor(p5.frameCount * 0.02) % 32
+    const cardIndex = 7 // p5.floor(p5.frameCount * 0.02) % 32
     const cimg = this.cardImages[cardIndex]
     if (cimg) {
       for (let i = 0; i < 6; i++) {
-        p5.image(cimg, 75 + i * 90, 500, 100, 160)
+        const cc = p5.min(cardIndex + i, this.cardImages.length - 1)
+        p5.image(this.cardImages[cc], 75 + i * 90, 500, 100, 160)
       }
+      p5.image(cimg, 300, 200, 100 * 3, 160 * 3)
     }
-
-    if (this.projectGraphics) {
-      const gps = this.projectGraphics.light
-      for (let i = 0; i < 4; i++) {
-        this.renderProjectGraphics(
-          gps[i],
-          0,
-          0,
-          280,
-          70,
-          10,
-          25 + i * 85,
-          280,
-          70,
-          p5,
-        )
-      }
-      const gps2 = this.projectGraphics.dark
-      for (let i = 0; i < 4; i++) {
-        this.renderProjectGraphics(
-          gps2[i],
-          0,
-          0,
-          280,
-          70,
-          310,
-          25 + i * 85,
-          280,
-          70,
-          p5,
-        )
-      }
-      this.renderProjectGraphics(
-        this.projectGraphics.white,
-        0,
-        0,
-        280,
-        70,
-        10,
-        370,
-        280,
-        70,
-        p5,
-      )
-    }
-
-    if (this.subjectIconImages.length !== 0) {
-      p5.image(this.subjectIconImages[0], 45, 48, 30, 30)
-    }
-    customFont.render("engineering", 72, 57, 17, p5.color(0), p5)
-    customFont.render("engineering", 70, 55, 17, p5.color(250), p5)
-
-    customFont.render("35", 227, 90, 25, p5.color(0), p5)
-    customFont.render("35", 225, 88, 25, p5.color(250), p5)
-
-    if (this.starImage) {
-      p5.image(this.cardBackside, 450, 180, 100, 160)
-      customFont.render("26", 436, 136, 18, p5.color(0), p5)
-      customFont.render("26", 435, 135, 18, p5.color(250), p5)
-    }
-
-    customFont.render("help", 530, 120, 12, p5.color(250), p5)
   }
 }
