@@ -121,9 +121,7 @@ export default class GameClient {
               "assign",
               22,
               p5.color(40, 200, 20),
-              () => {
-                console.log("assign")
-              },
+              playScene.selectController.discardClicked,
             ],
             [
               460,
@@ -133,9 +131,7 @@ export default class GameClient {
               "discard",
               22,
               p5.color(200, 60, 60),
-              () => {
-                console.log("discard")
-              },
+              playScene.selectController.discardClicked,
             ],
           ] as [
             number,

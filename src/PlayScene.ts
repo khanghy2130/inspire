@@ -34,7 +34,6 @@ type SelectableCard = {
   moveUpPrg: number
   starPrg: number
   squishPrg: number
-  slidePrg: number
   slideAmount: number // 0 is same position
 }
 
@@ -45,6 +44,7 @@ type SelectController = {
   discardPrg: number | null // not discarding if is null
   controlSectionPrg: number
   previousSelectedCount: number
+  discardClicked: () => void
   getInspiredIndices: (indexInHand: number) => number[]
   isNotActionable: () => boolean
   renderControlSection: () => void
@@ -107,7 +107,7 @@ type DeckController = {
   isDrawing: boolean
   flyers: number[] // prg[]
   displayPileCount: number
-  startDrawing: () => void
+  startDrawing: (delay: number) => void
   // render draw pile & flyers & drawn cards
   renderDrawPile: () => void
   renderHand: () => void
@@ -464,11 +464,11 @@ export default class PlayScene {
     isDrawing: false,
     flyers: [],
     displayPileCount: 0,
-    startDrawing: () => {
+    startDrawing: (delay) => {
       this.deckController.isDrawing = true
       this.deckController.displayPileCount = 0
       this.deckController.flyers = []
-      this.deckController.delay = 20
+      this.deckController.delay = delay
     },
     renderDrawPile: () => {
       const p5 = this.p5
@@ -611,12 +611,43 @@ export default class PlayScene {
         }
       }
 
+      // set starIndices
       if (selectController.hoveredIndex !== null) {
         selectController.starIndices = selectController.getInspiredIndices(
           selectController.hoveredIndex,
         )
       } else {
         selectController.starIndices = []
+      }
+
+      // update discardPrg
+      if (selectController.discardPrg !== null) {
+        selectController.discardPrg += 0.03
+        // done discarding?
+        if (selectController.discardPrg >= 1) {
+          selectController.discardPrg = null
+          // loop through selectableCards
+          for (
+            let i = selectController.selectableCards.length - 1;
+            i >= 0;
+            i--
+          ) {
+            const sCard = selectController.selectableCards[i]
+
+            // add card to discard pile & remove from hand
+            if (sCard.isSelected) {
+              sCard.isSelected = false
+              const card = deckController.cards.hand[i]
+              deckController.cards.discardPile.push(card)
+              deckController.cards.hand.splice(i, 1)
+            }
+
+            sCard.moveUpPrg = 0
+            sCard.slideAmount = 0
+          }
+          // trigger draw
+          deckController.startDrawing(0)
+        }
       }
 
       const rLength = hand.length - deckController.drawPrgs.length
@@ -646,7 +677,22 @@ export default class PlayScene {
         }
 
         p5.push()
-        p5.translate(75 + i * 90, 500 - selectableCard.moveUpPrg * 30)
+        // being discarded animation
+        const discardYOffset =
+          selectController.discardPrg !== null && selectableCard.isSelected
+            ? easeOutCubic(selectController.discardPrg) * 230
+            : 0
+        // being slided animation
+        const discardXOffset =
+          selectController.discardPrg === null
+            ? 0
+            : easeOutCubic(selectController.discardPrg) *
+              selectableCard.slideAmount *
+              90
+        p5.translate(
+          75 + i * 90 + discardXOffset,
+          500 - selectableCard.moveUpPrg * 30 + discardYOffset,
+        )
 
         // render outline
         if (selectableCard.outlinePrg > 0) {
@@ -679,6 +725,21 @@ export default class PlayScene {
     discardPrg: null,
     controlSectionPrg: 0,
     previousSelectedCount: 0,
+    discardClicked: () => {
+      const selectController = this.selectController
+      selectController.discardPrg = 0
+      // set slideAmount
+      const copy = selectController.selectableCards
+        .slice()
+        .filter((c) => !c.isSelected)
+      for (let j = 0; j < selectController.selectableCards.length; j++) {
+        const sCard = selectController.selectableCards[j]
+        const index = copy.indexOf(sCard)
+        if (index !== -1) {
+          sCard.slideAmount = index - j
+        }
+      }
+    },
     getInspiredIndices: (indexInHand) => {
       const indices: number[] = []
 
@@ -760,14 +821,16 @@ export default class PlayScene {
       // project has a target or laser?
       // last project is still spawning?
       // is drawing (& shuffling)?
-      // is animating drawing? (delayed if is discarding)
+      // is animating drawing?
+      // is discarding?
       /////// is hitting?
       return !!(
         projectController.hitController.target ||
         projectController.hitController.laser ||
         queue[queue.length - 1].spawnPrg < 2 ||
         this.deckController.isDrawing ||
-        this.deckController.drawPrgs.length !== 0
+        this.deckController.drawPrgs.length !== 0 ||
+        this.selectController.discardPrg !== null
       )
     },
     renderControlSection: () => {
@@ -856,7 +919,6 @@ export default class PlayScene {
         moveUpPrg: 0,
         starPrg: 0,
         squishPrg: 0,
-        slidePrg: 1,
         slideAmount: 0,
       })
     }
@@ -886,7 +948,7 @@ export default class PlayScene {
       )
     }
 
-    this.deckController.startDrawing()
+    this.deckController.startDrawing(20)
   }
 
   draw() {
@@ -950,7 +1012,7 @@ export default class PlayScene {
     let discardBtn = this.gc.buttons[2]
     if (selectedCount === 1 && assignBtn.isHovered) {
       assignBtn.clicked()
-      this.projectController.damage(this.projectController.queue[0].subject, 15)
+      this.projectController.damage(this.projectController.queue[0].subject, 15) ///
     } else if (selectedCount > 1 && discardBtn.isHovered) {
       discardBtn.clicked()
     }
