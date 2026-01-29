@@ -29,6 +29,8 @@ export default class LoadScene {
   subjectIconImages: P5.Image[] = []
   cardImages: P5.Image[] = []
 
+  hintTextImage!: P5.Image
+
   readonly SUBJECT_COLORS: [number, number, number][] = [
     [60, 220, 145], // green
     [85, 180, 240], // blue
@@ -38,7 +40,7 @@ export default class LoadScene {
   readonly GRAY_COLOR = 30
 
   private imagesCreateFunctions: Function[] = [
-    // create main background image
+    // main background image
     () => {
       const p5 = this.p5
       p5.background(0)
@@ -66,7 +68,7 @@ export default class LoadScene {
       this.backgroundImage = p5.get(0, 0, p5.width, p5.height)
     },
 
-    // create subject icons (60x60)
+    // subject icons (60x60)
     () => {
       const p5 = this.p5
       const sqSize = p5.width * 0.1
@@ -170,7 +172,7 @@ export default class LoadScene {
       this.subjectIconImages[3] = p5.get(0, sqSize * 3, sqSize, sqSize)
     },
 
-    // create star image (60x60) & card backside
+    // star image (60x60) & card backside
     () => {
       const p5 = this.p5
       p5.clear()
@@ -288,7 +290,7 @@ export default class LoadScene {
       this.cardBackside = p5.get(0, 0, p5.width / 6, (p5.width / 600) * 160)
     },
 
-    // create projectGraphics (280 x 70)
+    // projectGraphics (280 x 70)
     () => {
       const cpg = this.createProjectGraphics.bind(this)
       const black: [number, number, number] = [50, 50, 50]
@@ -334,6 +336,28 @@ export default class LoadScene {
           },
         ),
       }
+    },
+
+    // hint text (240 x 60)
+    () => {
+      const p5 = this.p5
+      p5.clear()
+
+      customFont.render(
+        "select 1 student to assign\nselect multiple to discard",
+        10,
+        15,
+        10,
+        p5.color(250),
+        p5,
+      )
+
+      this.hintTextImage = p5.get(
+        0,
+        0,
+        (p5.width / 600) * 240,
+        (p5.width / 600) * 40,
+      )
     },
 
     ///   other texts

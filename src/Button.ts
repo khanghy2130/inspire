@@ -28,8 +28,6 @@ export default class Button {
     clicked: Function,
     p5: P5,
   ) {
-    // strSize += 10
-
     this.p5 = p5
     this.x = x
     this.y = y
@@ -50,6 +48,7 @@ export default class Button {
     }
   }
 
+  //$ remove mouse position
   render(mx: number, my: number) {
     const p5 = this.p5
 

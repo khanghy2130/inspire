@@ -43,15 +43,18 @@ type SelectController = {
   starIndices: number[]
   hoveredIndex: number | null
   discardPrg: number | null // not discarding if is null
-  isNotActionable: () => boolean
+  controlSectionPrg: number
+  previousSelectedCount: number
   getInspiredIndices: (indexInHand: number) => number[]
+  isNotActionable: () => boolean
+  renderControlSection: () => void
 }
 
 type StatsController = {
   bouncePrg: number
   energy: number
   completedAmount: number
-  render: Function
+  render: () => void
 }
 
 type ProjectController = {
@@ -89,9 +92,9 @@ type ProjectController = {
   }
   add: (subject: SubjectType) => void
   damage: (subject: SubjectType, hitAmount: number) => void
-  renderProjects: Function
-  renderFlyer: Function
-  renderLaser: Function
+  renderProjects: () => void
+  renderFlyer: () => void
+  renderLaser: () => void
 }
 
 type DeckController = {
@@ -104,10 +107,10 @@ type DeckController = {
   isDrawing: boolean
   flyers: number[] // prg[]
   displayPileCount: number
-  startDrawing: Function
+  startDrawing: () => void
   // render draw pile & flyers & drawn cards
-  renderDrawPile: Function
-  renderHand: Function
+  renderDrawPile: () => void
+  renderHand: () => void
 }
 
 export default class PlayScene {
@@ -139,11 +142,10 @@ export default class PlayScene {
       scaleFactor *= 0.5 // animated range
       p5.scale(0.5 + scaleFactor, 1.5 - scaleFactor)
 
-      p5.strokeWeight(8)
       p5.noStroke()
-      p5.fill(35, 70, 140)
+      p5.fill(40, 90, 150)
       p5.rect(-60, 0, 120, 50, 15, 0, 0, 15)
-      p5.fill(30, 110, 40)
+      p5.fill(30, 120, 30)
       p5.rect(60, 0, 120, 50, 0, 15, 15, 0)
 
       const energy = this.statsController.energy + ""
@@ -166,6 +168,7 @@ export default class PlayScene {
         p5,
       )
 
+      p5.strokeWeight(8)
       p5.stroke(45, 185, 80)
       p5.line(82, 3, 90, 12)
       p5.line(100, -10, 90, 12)
@@ -674,6 +677,8 @@ export default class PlayScene {
     starIndices: [],
     hoveredIndex: null,
     discardPrg: null,
+    controlSectionPrg: 0,
+    previousSelectedCount: 0,
     getInspiredIndices: (indexInHand) => {
       const indices: number[] = []
 
@@ -765,6 +770,66 @@ export default class PlayScene {
         this.deckController.drawPrgs.length !== 0
       )
     },
+    renderControlSection: () => {
+      const p5 = this.p5
+      const selectController = this.selectController
+
+      // shrink if not actionable
+      if (selectController.isNotActionable()) {
+        selectController.controlSectionPrg = p5.max(
+          selectController.controlSectionPrg - 0.05,
+          0,
+        )
+      } else {
+        selectController.controlSectionPrg = p5.min(
+          selectController.controlSectionPrg + 0.05,
+          1,
+        )
+      }
+
+      // render
+      const assignBtn = this.gc.buttons[1]
+      const discardBtn = this.gc.buttons[2]
+      if (selectController.controlSectionPrg > 0) {
+        let selectedCount = 0
+        for (let i = 0; i < selectController.selectableCards.length; i++) {
+          if (selectController.selectableCards[i].isSelected) {
+            selectedCount++
+          }
+        }
+        if (
+          selectedCount !== selectController.previousSelectedCount &&
+          selectedCount < 3 &&
+          selectController.previousSelectedCount < 3
+        ) {
+          selectController.controlSectionPrg = 0
+          selectController.previousSelectedCount = selectedCount
+        }
+
+        p5.push()
+        p5.translate(
+          0,
+          10 * (1 - easeOutCubic(selectController.controlSectionPrg)),
+        )
+        if (selectedCount === 0) {
+          // hint image
+          p5.image(this.loadScene.hintTextImage, 460, 310, 240, 40)
+          assignBtn.isHovered = false
+          discardBtn.isHovered = false
+        } else if (selectedCount === 1) {
+          assignBtn.render(this.gc.mx, this.gc.my)
+        } else {
+          discardBtn.render(this.gc.mx, this.gc.my)
+        }
+        p5.pop()
+      } else {
+        // reset
+        assignBtn.isHovered = false
+        discardBtn.isHovered = false
+        assignBtn.prg = 1
+        discardBtn.prg = 1
+      }
+    },
   }
 
   constructor(gameClient: GameClient) {
@@ -829,6 +894,8 @@ export default class PlayScene {
     p5.cursor(p5.ARROW)
     p5.image(loadScene.backgroundImage, 300, 300, 600, 600)
 
+    this.selectController.renderControlSection()
+
     projectController.renderProjects()
 
     deckController.renderHand()
@@ -870,6 +937,22 @@ export default class PlayScene {
         !selectController.selectableCards[selectController.hoveredIndex]
           .isSelected
       return
+    }
+
+    // clicking action button
+    let selectedCount = 0
+    for (let i = 0; i < selectController.selectableCards.length; i++) {
+      if (selectController.selectableCards[i].isSelected) {
+        selectedCount++
+      }
+    }
+    let assignBtn = this.gc.buttons[1]
+    let discardBtn = this.gc.buttons[2]
+    if (selectedCount === 1 && assignBtn.isHovered) {
+      assignBtn.clicked()
+      this.projectController.damage(this.projectController.queue[0].subject, 15)
+    } else if (selectedCount > 1 && discardBtn.isHovered) {
+      discardBtn.clicked()
     }
   }
 }

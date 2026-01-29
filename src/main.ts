@@ -113,6 +113,30 @@ export default class GameClient {
                 sceneController.setScene("PLAY")
               },
             ],
+            [
+              460,
+              310,
+              240,
+              60,
+              "assign",
+              22,
+              p5.color(40, 200, 20),
+              () => {
+                console.log("assign")
+              },
+            ],
+            [
+              460,
+              310,
+              240,
+              60,
+              "discard",
+              22,
+              p5.color(200, 60, 60),
+              () => {
+                console.log("discard")
+              },
+            ],
           ] as [
             number,
             number,
