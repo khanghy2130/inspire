@@ -17,8 +17,20 @@ declare global {
   type AbilityType = 0 | 1 | 2 | 3 | 4
 }
 
-export function getRandomItem<T>(arr: T[]): T {
-  return arr[arr.length * Math.random()]
+export function easeInOutBack(x: number): number {
+  const c1 = 1.70158
+  const c2 = c1 * 1.525
+
+  return x < 0.5
+    ? (Math.pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+    : (Math.pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2
+}
+
+export function easeOutBack(x: number): number {
+  const c1 = 1.70158
+  const c3 = c1 + 1
+
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
 }
 
 export function easeOutCubic(x: number): number {

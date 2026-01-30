@@ -1,5 +1,10 @@
 import type P5 from "p5"
-import GameClient, { easeOutCubic, easeOutElastic } from "./main"
+import GameClient, {
+  easeInOutBack,
+  easeOutBack,
+  easeOutCubic,
+  easeOutElastic,
+} from "./main"
 import { customFont } from "./font"
 import LoadScene from "./LoadScene"
 import originalCards, { OriginalCard } from "./originalCards"
@@ -58,6 +63,7 @@ type StatsController = {
 
 type ProjectController = {
   readonly Y_POSITONS: number[] // X value is always 150
+  readonly NAMES: ["science", "technology", "engineering", "math"]
   projectMaxHP: number
   queue: Project[]
 
@@ -192,6 +198,7 @@ export default class PlayScene {
   projectController: ProjectController = {
     // X position is 150
     Y_POSITONS: [55, 140, 225, 310],
+    NAMES: ["science", "technology", "engineering", "math"],
     projectMaxHP: 10,
     queue: [],
     hitController: {
@@ -365,13 +372,41 @@ export default class PlayScene {
           }
         }
 
-        // contents (hp display number is real hp + draining if is hit target)
+        p5.image(
+          this.loadScene.subjectIconImages[project.subject],
+          _x + 35,
+          _y + 18,
+          25,
+          25,
+        )
+
+        // subject name
+        customFont.render(
+          projectController.NAMES[project.subject],
+          _x + 57,
+          _y + 27,
+          14,
+          blackColor,
+          p5,
+        )
+        customFont.render(
+          projectController.NAMES[project.subject],
+          _x + 55,
+          _y + 25,
+          14,
+          whiteColor,
+          p5,
+        )
+
+        // hp display number is real hp + draining if is hit target (spawning & normal)
         const displayHP = p5.round(
-          project.hp +
-            (isTarget
-              ? (target.previousHP - project.hp) *
-                (1 - easeOutCubic(p5.max(target.drainPrg, 0)))
-              : 0),
+          project.spawnPrg < 2
+            ? project.maxHp * easeOutCubic(p5.max(project.spawnPrg - 1, 0))
+            : project.hp +
+                (isTarget
+                  ? (target.previousHP - project.hp) *
+                    (1 - easeOutCubic(p5.max(target.drainPrg, 0)))
+                  : 0),
         )
 
         const hpX = _x + 230 - customFont.getNumHalfWidth(displayHP + "", 26)
@@ -540,7 +575,8 @@ export default class PlayScene {
           cards.hand.length - deckController.drawPrgs.length + di
         const card = cards.hand[handIndex]
 
-        const easedPrg = easeOutCubic(prg)
+        const flipPrg = easeOutCubic(prg)
+        const easedPrg = easeOutBack(prg)
         const x = p5.map(easedPrg, 0, 1, 530, 75 + handIndex * 90)
         const y = p5.map(easedPrg, 0, 1, 180, 500)
 
@@ -554,7 +590,7 @@ export default class PlayScene {
             backsideImage,
             x,
             y,
-            100 * p5.map(easedPrg, 0.5, 0.75, 1, 0),
+            100 * p5.map(flipPrg, 0.5, 0.75, 1, 0),
             160,
           )
         }
@@ -564,7 +600,7 @@ export default class PlayScene {
             card.imageData,
             x,
             y,
-            100 * p5.map(easedPrg, 0.75, 1, 0, 1),
+            100 * p5.map(flipPrg, 0.75, 1, 0, 1),
             160,
           )
           /// also render power
@@ -700,13 +736,13 @@ export default class PlayScene {
         // being discarded animation
         const discardYOffset =
           selectController.discardPrg !== null && selectableCard.isSelected
-            ? easeOutCubic(selectController.discardPrg) * 230
+            ? easeOutCubic(selectController.discardPrg) * 250
             : 0
         // being slided animation
         const discardXOffset =
           selectController.discardPrg === null
             ? 0
-            : easeOutCubic(selectController.discardPrg) *
+            : easeInOutBack(selectController.discardPrg) *
               selectableCard.slideAmount *
               90
         p5.translate(
@@ -718,7 +754,7 @@ export default class PlayScene {
         if (selectController.assignInfo !== null && selectableCard.isSelected) {
           const assignInfo = selectController.assignInfo
           // update curDist
-          const speed = 3 + assignInfo.dist * 0.02 // bonus speed for longer dist
+          const speed = 2 + assignInfo.dist * 0.018 // bonus speed for longer dist
           if (assignInfo.isGoingToHit) {
             assignInfo.curDist = p5.min(
               assignInfo.curDist + speed,
@@ -746,6 +782,9 @@ export default class PlayScene {
             ((assignInfo.dir + p5.HALF_PI) / assignInfo.dist) *
               assignInfo.curDist,
           )
+          const scaleFactor =
+            p5.min((assignInfo.dist - assignInfo.curDist) / 40, 1) * 0.5
+          p5.scale(1.5 - scaleFactor, 0.5 + scaleFactor)
         }
 
         // render outline
@@ -829,7 +868,7 @@ export default class PlayScene {
         isGoingToHit: true,
         curDist: 0,
         dir: p5.atan2(endPos[1] - startPos[1], endPos[0] - startPos[0]),
-        dist: p5.dist(startPos[0], startPos[1], endPos[0], endPos[1]) - 80, // -half_card_height
+        dist: p5.dist(startPos[0], startPos[1], endPos[0], endPos[1]) - 40, // subtract by 25% of card height
       }
     },
     getInspiredIndices: (indexInHand) => {
