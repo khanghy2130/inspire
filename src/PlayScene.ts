@@ -40,7 +40,7 @@ type SelectController = {
   previousSelectedCount: number
 
   inspireInfo: {
-    state: "giver" | "laser" | "taker"
+    state: "laser" | "taker"
     prg: number
     takerIndices: number[]
     hasBuffed: boolean
@@ -72,6 +72,7 @@ type StatsController = {
 type ProjectController = {
   readonly Y_POSITONS: number[] // X value is always 150
   readonly NAMES: ["science", "technology", "engineering", "math"]
+  readonly ARC_TABLE: [number, number, number, number, number, number][]
   projectMaxHP: number
   queue: Project[]
 
@@ -123,6 +124,7 @@ type DeckController = {
   startDrawing: (delay: number) => void
   // render draw pile & flyers & drawn cards
   renderDrawPile: () => void
+  renderInspireLasers: () => void
   renderHand: () => void
 }
 
@@ -207,6 +209,13 @@ export default class PlayScene {
     // X position is 150
     Y_POSITONS: [55, 140, 225, 310],
     NAMES: ["science", "technology", "engineering", "math"],
+    ARC_TABLE: [
+      // x,y,w,h, end angle, start angle
+      [305, 50, 310, 330, 0, Math.PI],
+      [300, 50, 320, 440, 0, Math.PI - 0.6],
+      [280, 50, 360, 550, 0, Math.PI - 0.95],
+      [270, 50, 380, 660, 0, Math.PI - 1.15],
+    ],
     projectMaxHP: 10,
     queue: [],
     hitController: {
@@ -386,8 +395,8 @@ export default class PlayScene {
 
         p5.image(
           this.loadScene.subjectIconImages[project.subject],
-          _x + 35,
-          _y + 18,
+          _x + 30,
+          _y + 19,
           25,
           25,
         )
@@ -395,7 +404,7 @@ export default class PlayScene {
         // subject name
         customFont.render(
           projectController.NAMES[project.subject],
-          _x + 57,
+          _x + 48,
           _y + 27,
           14,
           blackColor,
@@ -403,7 +412,7 @@ export default class PlayScene {
         )
         customFont.render(
           projectController.NAMES[project.subject],
-          _x + 55,
+          _x + 46,
           _y + 25,
           14,
           whiteColor,
@@ -448,17 +457,9 @@ export default class PlayScene {
           }
 
           // spawn laser
-          const ARC_TABLE: [number, number, number, number, number, number][] =
-            [
-              // x,y,w,h, end angle, start angle
-              [305, 50, 310, 330, 0, p5.PI],
-              [300, 50, 320, 440, 0, p5.PI - 0.6],
-              [280, 50, 360, 550, 0, p5.PI - 0.95],
-              [270, 50, 380, 660, 0, p5.PI - 1.15],
-            ]
           projectController.hitController.laser = {
             isPerfect: target.isPerfect,
-            arcInfo: ARC_TABLE[i],
+            arcInfo: projectController.ARC_TABLE[i],
             prg: 0,
           }
         }
@@ -509,9 +510,9 @@ export default class PlayScene {
       p5.noFill()
       p5.strokeWeight(10)
       if (laser.isPerfect) {
-        p5.stroke(255, 255, 0)
+        p5.stroke(250, 250, 0)
       } else {
-        p5.stroke(255)
+        p5.stroke(250)
       }
       const headAngle = p5.map(p5.min(laser.prg, 0.8), 0, 0.8, a2, a1)
       const tailAngle = p5.map(p5.max(laser.prg, 0.2), 0.2, 1, a2, a1)
@@ -579,6 +580,8 @@ export default class PlayScene {
 
       // render cards being drawn
       const backsideImage = this.loadScene.cardBackside
+      const whiteColor = p5.color(255)
+      const blackColor = p5.color(0)
       for (let di = 0; di < deckController.drawPrgs.length; di++) {
         deckController.drawPrgs[di] += 0.017
         const prg = deckController.drawPrgs[di]
@@ -593,11 +596,11 @@ export default class PlayScene {
         const y = p5.map(easedPrg, 0, 1, 180, 500)
 
         // backside 0 to 0.5
-        if (easedPrg < 0.5) {
+        if (flipPrg < 0.5) {
           p5.image(backsideImage, x, y, 100, 160)
         }
         // 0.5 to 0.75 backside flipping
-        else if (easedPrg < 0.75) {
+        else if (flipPrg < 0.75) {
           p5.image(
             backsideImage,
             x,
@@ -608,15 +611,14 @@ export default class PlayScene {
         }
         // 0.75 to 1 face side flipping
         else {
-          //// use translate & scale
-          p5.image(
-            card.imageData,
-            x,
-            y,
-            100 * p5.map(flipPrg, 0.75, 1, 0, 1),
-            160,
-          )
+          p5.push()
+          p5.translate(x, y)
+          p5.scale(p5.map(flipPrg, 0.75, 1, 0, 1), 1)
+          p5.image(card.imageData, 0, 0, 100, 160)
           /// also render power
+          customFont.render(card.power + "", -33, -40, 22, blackColor, p5)
+          customFont.render(card.power + "", -35, -42, 22, whiteColor, p5)
+          p5.pop()
         }
 
         // remove
@@ -658,6 +660,81 @@ export default class PlayScene {
       // render pile count
       customFont.render("" + pileCount, 480, 260, 22, p5.color(250), p5)
     },
+
+    renderInspireLasers: () => {
+      const inspireInfo = this.selectController.inspireInfo
+      const selectableCards = this.selectController.selectableCards
+
+      if (inspireInfo && inspireInfo.state === "laser" && inspireInfo.prg > 0) {
+        const p5 = this.p5
+        let giverX = 0
+        for (let i = 0; i < selectableCards.length; i++) {
+          if (selectableCards[i].isSelected) {
+            giverX = 75 + i * 90
+            break
+          }
+        }
+        // lasers
+        p5.noFill()
+        p5.strokeWeight(10)
+        if (inspireInfo.projectIsCompleted) {
+          p5.stroke(250, 250, 0)
+        } else {
+          p5.stroke(250)
+        }
+
+        // test all inspire
+        // inspireInfo.takerIndices = []
+        // for (let za = 0; za < selectableCards.length; za++) {
+        //   if (selectableCards[za].isSelected) continue
+        //   inspireInfo.takerIndices.push(za)
+        // }
+
+        for (let i = 0; i < inspireInfo.takerIndices.length; i++) {
+          let takerX = 75 + inspireInfo.takerIndices[i] * 90
+          const leftToRight = giverX < takerX
+
+          const x = (giverX + takerX) / 2
+          const w = leftToRight ? takerX - giverX : giverX - takerX
+
+          let leftAngle = 0
+          let rightAngle = 0
+          if (leftToRight) {
+            leftAngle = p5.map(
+              p5.min(inspireInfo.prg, 0.8),
+              0,
+              0.8,
+              p5.PI,
+              p5.TWO_PI,
+            )
+            rightAngle = p5.map(
+              p5.max(inspireInfo.prg, 0.2),
+              0.2,
+              1,
+              p5.PI,
+              p5.TWO_PI,
+            )
+          } else {
+            leftAngle = p5.map(
+              p5.max(inspireInfo.prg, 0.2),
+              0.2,
+              1,
+              p5.TWO_PI,
+              p5.PI,
+            )
+            rightAngle = p5.map(
+              p5.min(inspireInfo.prg, 0.8),
+              0,
+              0.8,
+              p5.TWO_PI,
+              p5.PI,
+            )
+          }
+          p5.arc(x, 430, w, 200 + w * 0.4, rightAngle, leftAngle)
+        }
+      }
+    },
+
     renderHand: () => {
       const p5 = this.p5
       const { mx, my } = this.gc
@@ -724,7 +801,9 @@ export default class PlayScene {
       if (inspireInfo) {
         // laser prg speed? else card flip speed
         if (inspireInfo.state === "laser") {
-          inspireInfo.prg += 0.01
+          deckController.renderInspireLasers()
+          inspireInfo.prg += 0.015
+          inspireInfo.prg = Math.round(inspireInfo.prg * 100000) / 100000
         } else {
           inspireInfo.prg += 0.02
         }
@@ -743,19 +822,20 @@ export default class PlayScene {
         if (inspireInfo.prg >= 1) {
           // next state?
           inspireInfo.prg = 0
-          if (inspireInfo.state === "giver") {
-            inspireInfo.state = "laser"
-            ///// spawn lasers
-          } else if (inspireInfo.state === "laser") {
+          if (inspireInfo.state === "laser") {
             inspireInfo.state = "taker"
           } else if (inspireInfo.state === "taker") {
             selectController.inspireInfo = null
             inspireInfo = null // clear local as well
+            selectController.discardClicked()
+            this.statsController.energy++ // compensate for using discard
           }
         }
       }
 
       const rLength = hand.length - deckController.drawPrgs.length
+      const whiteColor = p5.color(255)
+      const blackColor = p5.color(0)
       for (let i = 0; i < rLength; i++) {
         const card = hand[i]
         const selectableCard = selectController.selectableCards[i]
@@ -803,7 +883,7 @@ export default class PlayScene {
         if (selectController.assignInfo !== null && selectableCard.isSelected) {
           const assignInfo = selectController.assignInfo
           // update curDist
-          const speed = 3 + assignInfo.dist * 0.018 // bonus speed for longer dist
+          const speed = 4 + assignInfo.dist * 0.018 // bonus speed for longer dist
           if (assignInfo.isGoingToHit) {
             // slower speed if is squishing
             if (assignInfo.dist - assignInfo.curDist < 40) {
@@ -845,10 +925,14 @@ export default class PlayScene {
                 selectController.inspireInfo = {
                   projectIsCompleted: assignInfo.projectIsCompleted,
                   hasBuffed: false,
-                  state: "giver",
-                  prg: -0.3, // initial delay
+                  state: "laser",
+                  prg: 0,
                   takerIndices: takerIndices,
                 }
+              } else {
+                // skip inspire
+                selectController.discardClicked()
+                this.statsController.energy++ // compensate for using discard
               }
             }
           }
@@ -866,13 +950,21 @@ export default class PlayScene {
           p5.scale(1.5 - scaleFactor, 0.5 + scaleFactor)
         }
 
-        // inspiring transformation (if is inspiring & initial delay)
-        if (inspireInfo && inspireInfo.prg > 0) {
-          // is giver or is taker?
-          if (
-            (inspireInfo.state === "giver" && selectableCard.isSelected) ||
-            (inspireInfo.state === "taker" &&
-              inspireInfo.takerIndices.includes(i))
+        // inspiring transformation (if is inspiring)
+        if (inspireInfo) {
+          // is giver
+          if (inspireInfo.state === "laser" && selectableCard.isSelected) {
+            // pulse
+            const s =
+              p5.sin(p5.map(p5.min(inspireInfo.prg, 0.3), 0, 0.3, 0, p5.PI)) *
+                0.1 +
+              1
+            p5.scale(s, s)
+          }
+          // is taker?
+          else if (
+            inspireInfo.state === "taker" &&
+            inspireInfo.takerIndices.includes(i)
           ) {
             const doubleFlipPrg = inspireInfo.prg
             // closing face up 0 - 0.25
@@ -921,7 +1013,9 @@ export default class PlayScene {
         // render card image
         p5.image(card.imageData, 0, 0, 100, 160)
 
-        //// render power
+        // render power
+        customFont.render(card.power + "", -33, -40, 22, blackColor, p5)
+        customFont.render(card.power + "", -35, -42, 22, whiteColor, p5)
 
         // render star
         const starSize = selectableCard.starPrg * 30
