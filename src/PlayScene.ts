@@ -60,6 +60,7 @@ type SelectController = {
   getInspiredIndices: (indexInHand: number) => number[]
   isNotActionable: () => boolean
   renderControlSection: () => void
+  renderHoverPopup: () => void
 }
 
 type StatsController = {
@@ -134,6 +135,7 @@ export default class PlayScene {
   loadScene!: LoadScene
 
   screenShakePrg: number = 1
+  screenShakeStrength: number = 0
   gameIsOver: boolean = false
   checkGameIsOver: () => boolean = () => {
     return (
@@ -242,6 +244,7 @@ export default class PlayScene {
     },
     // no safe exit
     damage: (subject, hitAmount) => {
+      const p5 = this.p5
       const projectController = this.projectController
       const queue = projectController.queue
       let project!: Project
@@ -262,7 +265,7 @@ export default class PlayScene {
         project,
         previousHP,
         squishPrg: 0,
-        squishStrength: this.p5.constrain(hitAmount / project.maxHp, 0.2, 1),
+        squishStrength: p5.constrain(hitAmount / project.maxHp, 0.2, 1),
         drainPrg: -1,
         isCompleted,
         isPerfect,
@@ -273,6 +276,7 @@ export default class PlayScene {
       }
 
       this.screenShakePrg = 0 // trigger screen shake
+      this.screenShakeStrength = hitAmount / project.maxHp
     },
     renderProjects: () => {
       const p5 = this.p5
@@ -845,9 +849,15 @@ export default class PlayScene {
 
         // update outlinePrg
         if (selectController.hoveredIndex === i) {
-          selectableCard.outlinePrg = p5.min(selectableCard.outlinePrg + 0.2, 1)
+          selectableCard.outlinePrg = p5.min(
+            selectableCard.outlinePrg + 0.15,
+            1,
+          )
         } else {
-          selectableCard.outlinePrg = p5.max(selectableCard.outlinePrg - 0.2, 0)
+          selectableCard.outlinePrg = p5.max(
+            selectableCard.outlinePrg - 0.15,
+            0,
+          )
         }
 
         // update moveUpPrg
@@ -1253,6 +1263,18 @@ export default class PlayScene {
         discardBtn.prg = 1
       }
     },
+    renderHoverPopup: () => {
+      return
+      const selectController = this.selectController
+      if (selectController.hoveredIndex === null) {
+        return
+      }
+      const p5 = this.p5
+
+      p5.noStroke()
+      p5.fill(0, 200)
+      p5.rect(300, 75, 600, 150)
+    },
   }
 
   constructor(gameClient: GameClient) {
@@ -1326,7 +1348,7 @@ export default class PlayScene {
         Math.sin(this.screenShakePrg * Math.PI * 2 * frequency) *
         Math.pow(1 - this.screenShakePrg, 2)
 
-      p5.translate(0, f * -10)
+      p5.translate(0, f * this.screenShakeStrength * -25)
     }
 
     this.selectController.renderControlSection()
@@ -1339,6 +1361,8 @@ export default class PlayScene {
     projectController.renderLaser()
     this.statsController.render()
     projectController.renderFlyer()
+
+    this.selectController.renderHoverPopup()
 
     p5.pop()
   }
