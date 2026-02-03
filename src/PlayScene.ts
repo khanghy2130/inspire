@@ -154,6 +154,25 @@ type DeckController = {
   renderHand: () => void
 }
 
+type TutorialController = {
+  readonly PANELS: {
+    panelY: number
+    imageHeight: number
+    focusInfo?: [number, number, number, number] // xywh
+  }[]
+  isOpened: boolean
+  index: number
+  startY: number
+  movePrg: number
+  focusRect: {
+    spawnPrg: number
+    movePrg: number
+    prevInfo: [number, number, number, number]
+  }
+  setIndex: (isNext: boolean) => void
+  render: () => void
+}
+
 export default class PlayScene {
   gc: GameClient
   p5!: P5
@@ -233,6 +252,104 @@ export default class PlayScene {
     },
   }
 
+  tutorialController: TutorialController = {
+    PANELS: [
+      {
+        panelY: 300,
+        imageHeight: 200,
+      },
+      {
+        panelY: 475,
+        imageHeight: 100,
+      },
+      {
+        panelY: 240,
+        imageHeight: 160,
+      },
+      {
+        panelY: 280,
+        imageHeight: 100,
+      },
+      {
+        panelY: 130,
+        imageHeight: 130,
+      },
+      {
+        panelY: 450,
+        imageHeight: 100,
+      },
+      {
+        panelY: 300,
+        imageHeight: 100,
+      },
+    ],
+    isOpened: false,
+    index: 0,
+    startY: 0,
+    movePrg: 1,
+    focusRect: {
+      spawnPrg: 0,
+      movePrg: 0,
+      prevInfo: [300, 0, 0, 0],
+    },
+
+    setIndex: (isNext) => {
+      const tc = this.tutorialController
+      tc.movePrg = 0 // trigger move
+      if (tc.index >= 0) {
+        tc.startY = tc.PANELS[tc.index].panelY
+      } else {
+        tc.startY = -300
+      }
+      if (isNext) {
+        // is closing?
+        if (tc.index === 6) {
+          tc.isOpened = false
+          return
+        }
+        tc.index++
+      } else {
+        // is closing?
+        if (tc.index === 0) {
+          tc.isOpened = false
+          return
+        }
+        tc.index--
+      }
+    },
+
+    render: () => {
+      const p5 = this.p5
+      const tc = this.tutorialController
+      if (!tc.isOpened && tc.movePrg === 1) {
+        return
+      }
+      const panelInfo = tc.PANELS[tc.index]
+
+      // update movePrg
+      tc.movePrg = p5.min(1, tc.movePrg + 0.02)
+
+      const endY = !tc.isOpened ? -300 : panelInfo.panelY
+
+      const y = p5.map(easeOutCubic(tc.movePrg), 0, 1, tc.startY, endY)
+
+      // panel rect
+      p5.stroke(200)
+      p5.strokeWeight(3)
+      p5.fill(0, 220)
+      p5.rect(300, y, 610, 250)
+
+      // image
+      p5.image(
+        this.loadScene.tutorialImages[tc.index],
+        300,
+        y - 25,
+        600,
+        panelInfo.imageHeight,
+      )
+    },
+  }
+
   projectController: ProjectController = {
     // X position is 150
     Y_POSITONS: [55, 140, 225, 310],
@@ -308,7 +425,7 @@ export default class PlayScene {
       const projectController = this.projectController
       const queue = projectController.queue
       const target = projectController.hitController.target
-      let { projectGraphics, renderProjectGraphics } = this.loadScene
+      let { projectGraphics, renderGraphics } = this.loadScene
       let doesRemoveTarget = false
 
       // all projects
@@ -349,7 +466,7 @@ export default class PlayScene {
             : (1 / project.maxHp) * project.hp
 
         // dark panel
-        renderProjectGraphics(
+        renderGraphics(
           projectGraphics.dark[project.subject],
           0,
           0,
@@ -364,7 +481,7 @@ export default class PlayScene {
 
         // light panel
         if (hpFactor > 0) {
-          renderProjectGraphics(
+          renderGraphics(
             projectGraphics.light[project.subject],
             0,
             0,
@@ -392,7 +509,7 @@ export default class PlayScene {
               (1 / project.maxHp) * target.previousHP * 280 - whiteX
             whiteWidth =
               whiteWidth * (1 - easeOutCubic(p5.max(target.drainPrg, 0)))
-            renderProjectGraphics(
+            renderGraphics(
               projectGraphics.white,
               whiteX,
               0,
@@ -824,6 +941,14 @@ export default class PlayScene {
       const deckController = this.deckController
       const cards = deckController.cards
       let pileCount = cards.drawPile.length
+      const isNotActionable = this.selectController.isNotActionable()
+
+      // extra: render help button
+      if (!isNotActionable) {
+        this.gc.buttons[11].render(mx, my)
+      } else {
+        this.gc.buttons[11].isHovered = false
+      }
 
       // update
       if (deckController.isDrawing && deckController.delay-- < 0) {
@@ -854,13 +979,7 @@ export default class PlayScene {
       }
 
       // increare drawPileOutlinePrg (if actionable & hovering on draw pile)
-      if (
-        !this.selectController.isNotActionable() &&
-        mx > 480 &&
-        mx < 580 &&
-        my > 100 &&
-        my < 260
-      ) {
+      if (!isNotActionable && mx > 480 && mx < 580 && my > 100 && my < 260) {
         p5.cursor(p5.HAND)
         deckController.inspectModal.drawPileOutlinePrg = p5.min(
           deckController.inspectModal.drawPileOutlinePrg + 0.15,
@@ -1489,6 +1608,7 @@ export default class PlayScene {
       // is hitting?
       // is inspiring?
       // game is over?
+      // tutorial is shown?
       return !!(
         projectController.hitController.target ||
         projectController.hitController.laser ||
@@ -1498,15 +1618,21 @@ export default class PlayScene {
         selectController.discardPrg !== null ||
         selectController.assignInfo ||
         selectController.inspireInfo ||
-        this.checkGameIsOver()
+        this.checkGameIsOver() ||
+        this.tutorialController.isOpened ||
+        this.tutorialController.movePrg < 1
       )
     },
     renderControlSection: () => {
       const p5 = this.p5
       const selectController = this.selectController
 
-      // shrink if not actionable
-      if (selectController.isNotActionable()) {
+      // shrink if not actionable && not showing tutorial
+      if (
+        selectController.isNotActionable() &&
+        !this.tutorialController.isOpened &&
+        this.tutorialController.movePrg === 1
+      ) {
         selectController.controlSectionPrg = p5.max(
           selectController.controlSectionPrg - 0.05,
           0,
@@ -1787,14 +1913,12 @@ export default class PlayScene {
     p5.image(loadScene.backgroundImage, 300, 300, 600, 600)
 
     p5.push()
+    // screen shake
     if (this.screenShakePrg < 1) {
       this.screenShakePrg = p5.min(this.screenShakePrg + 0.012, 1)
-
-      const frequency = 2
       const f =
-        Math.sin(this.screenShakePrg * Math.PI * 2 * frequency) *
+        Math.sin(this.screenShakePrg * Math.PI * 4) *
         Math.pow(1 - this.screenShakePrg, 2)
-
       p5.translate(0, f * this.screenShakeStrength * -25)
     }
 
@@ -1813,48 +1937,12 @@ export default class PlayScene {
 
     p5.pop()
 
-    // tutorial rendering
-    p5.push()
-    p5.rectMode(p5.CORNER)
-
-    p5.translate(125, -100)
-
-    p5.fill(80, 180) ///
-    p5.noStroke()
-
-    // y of rect is prevRectY + prevRectH
-
-    p5.rect(0, 0, 350, 270) // #1
-    /*
-    const whiteColor = p5.color(250)
-    customFont.render(
-      "welcome! this game is about\na collaboration between 32\nstudents to work on different\nprojects. there are 4 types of\nstudents and projects:",
-      15,
-      30,
-      13,
-      whiteColor,
-      p5,
-    )
-    for (let i = 0; i < 4; i++) {
-      p5.image(loadScene.subjectIconImages[i], 50, 160 + 30 * i, 22, 22)
-      customFont.render(
-        this.projectController.NAMES[i],
-        70,
-        166 + 30 * i,
-        15,
-        p5.color(loadScene.SUBJECT_COLORS[i]),
-        p5,
-      )
-    }
-    */
-
-    p5.rect(0, 270, 200, 270) // #2
-
-    p5.rectMode(p5.CENTER)
-    p5.pop()
+    this.tutorialController.render()
   }
 
+  ///
   keyReleased() {
+    this.tutorialController.setIndex(true)
     this.screenShakePrg = 0
     const keyCode = this.p5.keyCode
     if (this.selectController.isNotActionable()) return
@@ -1873,6 +1961,16 @@ export default class PlayScene {
   }
 
   click() {
+    // is showing tutorial?
+    const tutorialController = this.tutorialController
+    if (tutorialController.isOpened || tutorialController.movePrg < 1) {
+      // not moving?
+      if (tutorialController.movePrg === 1) {
+        //// back/next buttons
+      }
+      return
+    }
+
     const selectController = this.selectController
     if (selectController.isNotActionable()) {
       return
@@ -1915,13 +2013,22 @@ export default class PlayScene {
     }
     if (selectedCount === 1 && buttons[1].isHovered) {
       buttons[1].clicked() // assign
+      return
     } else if (selectedCount > 1 && buttons[2].isHovered) {
       buttons[2].clicked() // discard
+      return
     }
 
     // clicking draw pile
     if (mx > 480 && mx < 580 && my > 100 && my < 260) {
       this.deckController.inspectModal.openOrClose()
+      return
+    }
+
+    // clicking help button
+    if (buttons[11].isHovered) {
+      buttons[11].clicked()
+      return
     }
   }
 }

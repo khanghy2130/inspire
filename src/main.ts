@@ -266,6 +266,26 @@ export default class GameClient {
                 inspectModal.setPositions()
               },
             ],
+            [
+              400,
+              120,
+              100,
+              35,
+              "help",
+              15,
+              p5.color(100),
+              () => {
+                const tc = playScene.tutorialController
+                // deselect all cards
+                const sCards = playScene.selectController.selectableCards
+                for (let i = 0; i < sCards.length; i++) {
+                  sCards[i].isSelected = false
+                }
+                tc.isOpened = true
+                tc.index = -1
+                tc.setIndex(true)
+              },
+            ],
           ] as [
             number,
             number,

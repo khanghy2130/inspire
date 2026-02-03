@@ -32,7 +32,6 @@ export let customFont = {
     ag: P5,
   ) {
     const obj = { tx: 0, ty: 0 }
-    //$ ag.fill
     ag.fill(c)
     for (let i = 0; i < message.length; i++) {
       this.drawChar({
@@ -49,8 +48,6 @@ export let customFont = {
   },
 
   drawChar: function ({ char, ag, s, x, y, obj, c }: drawCharParams) {
-    //$ ag: pushMatrix, popMatrix, translate, scale, strokeWeight, strokeCap, noStroke, noFill, stroke, fill, point, quad, triangle, ellipse, bezier, SQUARE, ROUND
-
     ag.push()
     ag.translate(x, y)
     ag.scale(s / 50)

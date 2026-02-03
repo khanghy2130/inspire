@@ -32,7 +32,7 @@ export default class LoadScene {
   hintTextImage!: P5.Image
   inspireDescImage!: P5.Image
 
-  tutorialGraphics!: P5.Graphics
+  tutorialImages: P5.Image[] = []
 
   readonly SUBJECT_COLORS: [number, number, number][] = [
     [60, 220, 145], // green
@@ -69,110 +69,6 @@ export default class LoadScene {
       }
       p5.colorMode(p5.RGB)
       this.backgroundImage = p5.get(0, 0, p5.width, p5.height)
-    },
-
-    // subject icons (60x60)
-    () => {
-      const p5 = this.p5
-      const sqSize = p5.width * 0.1
-      p5.noFill()
-
-      // science
-      p5.clear()
-      p5.stroke(0)
-      p5.strokeWeight(10)
-      for (let i = 0; i < 3; i++) {
-        p5.push()
-        p5.translate(30, 30)
-        p5.rotate((p5.PI / 3) * i)
-        p5.ellipse(0, 0, 48, 15)
-        p5.pop()
-      }
-      // ---
-      p5.strokeWeight(4)
-      p5.stroke(...this.SUBJECT_COLORS[0])
-      for (let i = 0; i < 3; i++) {
-        p5.push()
-        p5.translate(30, 30)
-        p5.rotate((p5.PI / 3) * i)
-        p5.ellipse(0, 0, 48, 15)
-        p5.pop()
-      }
-      this.subjectIconImages[0] = p5.get(0, 0, sqSize, sqSize)
-
-      // tech
-      p5.clear()
-      const CUBE_X = p5.sqrt(3) * 10
-      p5.strokeWeight(12)
-      p5.stroke(0)
-      for (let i = 0; i < 3; i++) {
-        p5.push()
-        p5.translate(30, 90)
-        p5.rotate((p5.PI / 3) * 2 * i)
-        p5.line(0, 0, 0, 20)
-        p5.line(CUBE_X, 10, 0, 20)
-        p5.line(CUBE_X, 10, CUBE_X, -10)
-        p5.pop()
-      }
-      // ---
-      p5.strokeWeight(5)
-      p5.stroke(...this.SUBJECT_COLORS[1])
-      for (let i = 0; i < 3; i++) {
-        p5.push()
-        p5.translate(30, 90)
-        p5.rotate((p5.PI / 3) * 2 * i)
-        p5.line(0, 0, 0, 20)
-        p5.line(CUBE_X, 10, 0, 20)
-        p5.line(CUBE_X, 10, CUBE_X, -10)
-        p5.pop()
-      }
-      this.subjectIconImages[1] = p5.get(0, sqSize, sqSize, sqSize)
-
-      // engineer
-      p5.clear()
-      p5.noStroke()
-      p5.fill(0)
-      for (let i = 0; i < 8; i++) {
-        p5.push()
-        p5.translate(30, 150)
-        p5.rotate(p5.QUARTER_PI * i)
-        p5.quad(-9, -18, 9, -18, 5, -28, -5, -28)
-        p5.pop()
-      }
-      p5.noFill()
-      p5.strokeWeight(12)
-      p5.stroke(0)
-      p5.ellipse(30, 150, 30, 30)
-      // ---
-      p5.noStroke()
-      p5.fill(...this.SUBJECT_COLORS[2])
-      for (let i = 0; i < 8; i++) {
-        p5.push()
-        p5.translate(30, 150)
-        p5.rotate(p5.QUARTER_PI * i)
-        p5.quad(-8, -13, 8, -13, 3, -25, -3, -25)
-        p5.pop()
-      }
-      p5.noFill()
-      p5.strokeWeight(6)
-      p5.stroke(...this.SUBJECT_COLORS[2])
-      p5.ellipse(30, 150, 30, 30)
-      this.subjectIconImages[2] = p5.get(0, sqSize * 2, sqSize, sqSize)
-
-      // math
-      p5.clear()
-      p5.stroke(0)
-      p5.strokeWeight(12)
-      p5.line(15, 197, 45, 197)
-      p5.line(23, 197, 15, 220)
-      p5.bezier(38, 197, 28, 220, 30, 225, 42, 215)
-      // ---
-      p5.stroke(...this.SUBJECT_COLORS[3])
-      p5.strokeWeight(6)
-      p5.line(15, 197, 45, 197)
-      p5.line(23, 197, 15, 220)
-      p5.bezier(38, 197, 28, 220, 30, 225, 42, 215)
-      this.subjectIconImages[3] = p5.get(0, sqSize * 3, sqSize, sqSize)
     },
 
     // star image (60x60) & card backside
@@ -293,6 +189,110 @@ export default class LoadScene {
       this.cardBackside = p5.get(0, 0, p5.width / 6, (p5.width / 600) * 160)
     },
 
+    // subject icons (60x60)
+    () => {
+      const p5 = this.p5
+      const sqSize = p5.width * 0.1
+      p5.noFill()
+
+      // science
+      p5.clear()
+      p5.stroke(0)
+      p5.strokeWeight(10)
+      for (let i = 0; i < 3; i++) {
+        p5.push()
+        p5.translate(30, 30)
+        p5.rotate((p5.PI / 3) * i)
+        p5.ellipse(0, 0, 48, 15)
+        p5.pop()
+      }
+      // ---
+      p5.strokeWeight(4)
+      p5.stroke(...this.SUBJECT_COLORS[0])
+      for (let i = 0; i < 3; i++) {
+        p5.push()
+        p5.translate(30, 30)
+        p5.rotate((p5.PI / 3) * i)
+        p5.ellipse(0, 0, 48, 15)
+        p5.pop()
+      }
+      this.subjectIconImages[0] = p5.get(0, 0, sqSize, sqSize)
+
+      // tech
+      p5.clear()
+      const CUBE_X = p5.sqrt(3) * 10
+      p5.strokeWeight(12)
+      p5.stroke(0)
+      for (let i = 0; i < 3; i++) {
+        p5.push()
+        p5.translate(30, 90)
+        p5.rotate((p5.PI / 3) * 2 * i)
+        p5.line(0, 0, 0, 20)
+        p5.line(CUBE_X, 10, 0, 20)
+        p5.line(CUBE_X, 10, CUBE_X, -10)
+        p5.pop()
+      }
+      // ---
+      p5.strokeWeight(5)
+      p5.stroke(...this.SUBJECT_COLORS[1])
+      for (let i = 0; i < 3; i++) {
+        p5.push()
+        p5.translate(30, 90)
+        p5.rotate((p5.PI / 3) * 2 * i)
+        p5.line(0, 0, 0, 20)
+        p5.line(CUBE_X, 10, 0, 20)
+        p5.line(CUBE_X, 10, CUBE_X, -10)
+        p5.pop()
+      }
+      this.subjectIconImages[1] = p5.get(0, sqSize, sqSize, sqSize)
+
+      // engineer
+      p5.clear()
+      p5.noStroke()
+      p5.fill(0)
+      for (let i = 0; i < 8; i++) {
+        p5.push()
+        p5.translate(30, 150)
+        p5.rotate(p5.QUARTER_PI * i)
+        p5.quad(-9, -18, 9, -18, 5, -28, -5, -28)
+        p5.pop()
+      }
+      p5.noFill()
+      p5.strokeWeight(12)
+      p5.stroke(0)
+      p5.ellipse(30, 150, 30, 30)
+      // ---
+      p5.noStroke()
+      p5.fill(...this.SUBJECT_COLORS[2])
+      for (let i = 0; i < 8; i++) {
+        p5.push()
+        p5.translate(30, 150)
+        p5.rotate(p5.QUARTER_PI * i)
+        p5.quad(-8, -13, 8, -13, 3, -25, -3, -25)
+        p5.pop()
+      }
+      p5.noFill()
+      p5.strokeWeight(6)
+      p5.stroke(...this.SUBJECT_COLORS[2])
+      p5.ellipse(30, 150, 30, 30)
+      this.subjectIconImages[2] = p5.get(0, sqSize * 2, sqSize, sqSize)
+
+      // math
+      p5.clear()
+      p5.stroke(0)
+      p5.strokeWeight(12)
+      p5.line(15, 197, 45, 197)
+      p5.line(23, 197, 15, 220)
+      p5.bezier(38, 197, 28, 220, 30, 225, 42, 215)
+      // ---
+      p5.stroke(...this.SUBJECT_COLORS[3])
+      p5.strokeWeight(6)
+      p5.line(15, 197, 45, 197)
+      p5.line(23, 197, 15, 220)
+      p5.bezier(38, 197, 28, 220, 30, 225, 42, 215)
+      this.subjectIconImages[3] = p5.get(0, sqSize * 3, sqSize, sqSize)
+    },
+
     // projectGraphics (280 x 70)
     () => {
       const cpg = this.createProjectGraphics.bind(this)
@@ -386,15 +386,141 @@ export default class LoadScene {
       )
     },
 
-    // tutorial graphics (part 1)
+    // tutorial images part 1 (y: 200, 100, 160, 100)
     () => {
       const p5 = this.p5
-      this.tutorialGraphics = p5.createGraphics(350, 700, p5.P2D)
-      const tg = this.tutorialGraphics
-      tg.clear()
-      tg.noStroke()
-      tg.fill(0, 230)
-      tg.rect(0, 0, tg.width, tg.height)
+      const w = p5.width
+      const wDiv600 = w / 600
+      p5.clear()
+      const whiteColor = p5.color(250)
+
+      p5.noStroke()
+      p5.fill(215, 90, 0)
+      p5.rect(198, 52, 112, 28)
+      p5.rect(65, 82, 110, 28)
+      p5.rect(371, 219, 140, 28)
+      p5.rect(210, 320, 80, 28)
+      p5.rect(503, 320, 125, 28)
+      p5.rect(487, 350, 30, 28)
+      p5.rect(25, 380, 30, 28)
+      p5.rect(93, 410, 170, 28)
+      p5.rect(243, 480, 72, 28)
+      p5.rect(95, 540, 95, 28)
+
+      // #1
+      customFont.render(
+        "welcome! this game is about a collaboration\nbetween 32 students to complete as many\nprojects as possible.\nthere are 4 types of students and projects:",
+        15,
+        30,
+        15,
+        whiteColor,
+        p5,
+      )
+      const SUBJECT_NAMES = ["science", "technology", "engineering", "math"]
+      for (let i = 0; i < 2; i++) {
+        p5.image(this.subjectIconImages[i], 50, 150 + 30 * i, 25, 25)
+        customFont.render(
+          SUBJECT_NAMES[i],
+          70,
+          156 + 30 * i,
+          18,
+          p5.color(this.SUBJECT_COLORS[i]),
+          p5,
+        )
+      }
+      for (let i = 2; i < 4; i++) {
+        p5.image(this.subjectIconImages[i], 350, 150 + 30 * (i - 2), 25, 25)
+        customFont.render(
+          SUBJECT_NAMES[i],
+          370,
+          156 + 30 * (i - 2),
+          18,
+          p5.color(this.SUBJECT_COLORS[i]),
+          p5,
+        )
+      }
+      this.tutorialImages.push(p5.get(0, 0, w, wDiv600 * 200))
+
+      // #2
+      customFont.render(
+        "these are projects, the hp numbers tell how\nmuch work is left. each student can only\nwork on the project of their own type.",
+        15,
+        227,
+        15,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, wDiv600 * 200, w, wDiv600 * 100))
+
+      // #3
+      customFont.render(
+        "here is your energy and number of completed\nprojects. completing a project gives +3 energy,\n+1 more energy if the hp is reduced to\nexactly zero. complete 20 projects before\nrunning out of energy to win!",
+        13,
+        328,
+        15,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, wDiv600 * 300, w, wDiv600 * 160))
+
+      // #4
+      customFont.render(
+        "this is your hand, there are always 6\nstudents in hand. each student has an\nability that inspires other students.",
+        50,
+        488,
+        15,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, wDiv600 * 460, w, wDiv600 * 100))
+    },
+
+    // tutorial images part 2 (y: 130, 100, 100)
+    () => {
+      const p5 = this.p5
+      const w = p5.width
+      const wDiv600 = w / 600
+      p5.clear()
+      const whiteColor = p5.color(250)
+
+      p5.noStroke()
+      p5.fill(215, 90, 0)
+      p5.rect(55, 50, 90, 28)
+      p5.rect(441, 80, 102, 28)
+      p5.rect(250, 150, 130, 28)
+
+      // #1
+      customFont.render(
+        "spend 1 energy to do one of these two actions.\nassign a student to work on their project\nthen trigger their ability. or discard to\nquickly get rid of multiple students in hand.",
+        15,
+        28,
+        15,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, 0, w, wDiv600 * 130))
+
+      // #2
+      customFont.render(
+        "this is your draw pile, click it to see the\nremaining students. once it is empty, return\nall discarded students to draw again.",
+        30,
+        158,
+        15,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, wDiv600 * 130, w, wDiv600 * 100))
+
+      // #2
+      customFont.render(
+        "how many projects can you help the\nstudents complete? good luck!",
+        15,
+        270,
+        19,
+        whiteColor,
+        p5,
+      )
+      this.tutorialImages.push(p5.get(0, wDiv600 * 230, w, wDiv600 * 100))
     },
   ]
 
@@ -631,7 +757,7 @@ export default class LoadScene {
     p5.pop()
   }
 
-  public renderProjectGraphics(
+  public renderGraphics(
     gp: P5.Graphics,
     sx: number,
     sy: number,
@@ -682,18 +808,6 @@ export default class LoadScene {
       customFont.render("loading", 185, 310, 35, p5.color(250), p5)
     } else {
       p5.background(0)
-    }
-    return
-
-    if (this.imagesCreateFunctions.length > 0) return
-    const cardIndex = 7 // p5.floor(p5.frameCount * 0.02) % 32
-    const cimg = this.cardImages[cardIndex]
-    if (cimg) {
-      for (let i = 0; i < 6; i++) {
-        const cc = p5.min(cardIndex + i, this.cardImages.length - 1)
-        p5.image(this.cardImages[cc], 75 + i * 90, 500, 100, 160)
-      }
-      p5.image(cimg, 300, 200, 100 * 3, 160 * 3)
     }
   }
 }
