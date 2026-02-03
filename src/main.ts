@@ -6,6 +6,7 @@ import { customFont } from "./font"
 import LoadScene from "./LoadScene"
 import SceneController from "./SceneController"
 import Button from "./Button"
+import EndScene from "./EndScene"
 
 declare global {
   type PositionType = [number, number]
@@ -58,6 +59,7 @@ export default class GameClient {
     const loadScene = new LoadScene(this)
     const menuScene = new MenuScene(this)
     const playScene = new PlayScene(this)
+    const endScene = new EndScene(this)
     const sceneController = new SceneController()
 
     const sketch = (p5: _p5_) => {
@@ -96,7 +98,7 @@ export default class GameClient {
         p5.strokeJoin(p5.ROUND)
         p5.frameRate(60)
 
-        // connect instances //$
+        // connect instances
         loadScene.p5 = p5
         loadScene.sceneController = sceneController
 
@@ -106,6 +108,12 @@ export default class GameClient {
 
         playScene.p5 = p5
         playScene.loadScene = loadScene
+        playScene.sceneController = sceneController
+
+        endScene.p5 = p5
+        endScene.loadScene = loadScene
+        endScene.playScene = playScene
+        endScene.sceneController = sceneController
 
         sceneController.p5 = p5
         sceneController.playScene = playScene
@@ -164,7 +172,7 @@ export default class GameClient {
               50,
               "full",
               18,
-              p5.color(204, 124, 18),
+              p5.color(200, 120, 20),
               () => {
                 const inspectModal = playScene.deckController.inspectModal
                 const inspectCards = inspectModal.inspectCards
@@ -182,7 +190,7 @@ export default class GameClient {
               50,
               "remaining",
               18,
-              p5.color(204, 124, 18),
+              p5.color(200, 120, 20),
               () => {
                 const inspectModal = playScene.deckController.inspectModal
                 const inspectCards = inspectModal.inspectCards
@@ -272,7 +280,7 @@ export default class GameClient {
               100,
               35,
               "help",
-              15,
+              13,
               p5.color(100),
               () => {
                 const tc = playScene.tutorialController
@@ -284,6 +292,31 @@ export default class GameClient {
                 tc.isOpened = true
                 tc.index = -1
                 tc.setIndex(true)
+                playScene.isHintingAtHelp = false
+              },
+            ],
+            [
+              400,
+              0,
+              120,
+              40,
+              "next",
+              15,
+              p5.color(40, 200, 20),
+              () => {
+                playScene.tutorialController.setIndex(true)
+              },
+            ],
+            [
+              200,
+              0,
+              120,
+              40,
+              "back",
+              15,
+              p5.color(200, 60, 60),
+              () => {
+                playScene.tutorialController.setIndex(false)
               },
             ],
           ] as [
@@ -309,6 +342,9 @@ export default class GameClient {
         this.touchCountdown-- // update input delay
 
         switch (sceneController.scene) {
+          case "PLAY":
+            playScene.draw()
+            break
           case "LOAD":
             //$ set ctx
             loadScene.update()
@@ -317,8 +353,8 @@ export default class GameClient {
           case "MENU":
             menuScene.draw()
             break
-          case "PLAY":
-            playScene.draw()
+          case "END":
+            endScene.draw()
             break
         }
         sceneController.updateAndRender()
@@ -328,22 +364,25 @@ export default class GameClient {
         else this.touchCountdown = 5
 
         switch (sceneController.scene) {
+          case "PLAY":
+            playScene.click()
+            return
           case "MENU":
             menuScene.click()
             return
-          case "PLAY":
-            playScene.click()
+          case "END":
+            endScene.click()
             return
         }
       }
 
-      p5.keyReleased = () => {
-        switch (sceneController.scene) {
-          case "PLAY":
-            playScene.keyReleased()
-            return
-        }
-      }
+      // p5.keyReleased = () => {
+      //   switch (sceneController.scene) {
+      //     case "PLAY":
+      //       playScene.keyReleased()
+      //       return
+      //   }
+      // }
     }
 
     new _p5_(sketch)

@@ -8,6 +8,7 @@ import GameClient, {
 import { customFont } from "./font"
 import LoadScene from "./LoadScene"
 import originalCards, { OriginalCard } from "./originalCards"
+import SceneController from "./SceneController"
 
 type PlayingCard = {
   oc: OriginalCard
@@ -177,7 +178,9 @@ export default class PlayScene {
   gc: GameClient
   p5!: P5
   loadScene!: LoadScene
+  sceneController!: SceneController
 
+  isHintingAtHelp: boolean = true
   screenShakePrg: number = 1
   screenShakeStrength: number = 0
   gameIsOver: boolean = false
@@ -186,6 +189,26 @@ export default class PlayScene {
       this.statsController.energy === 0 ||
       this.statsController.completedAmount === 20
     )
+  }
+  checkGoToEndScene: () => void = () => {
+    if (this.checkGameIsOver() && this.sceneController.isNotTransitioning()) {
+      // everything else is done?
+      const isNotActionableExceptGameOver =
+        this.projectController.hitController.target ||
+        this.projectController.hitController.laser ||
+        this.projectController.queue[this.projectController.queue.length - 1]
+          .spawnPrg < 2 ||
+        this.deckController.isDrawing ||
+        this.deckController.drawPrgs.length !== 0 ||
+        this.selectController.discardPrg !== null ||
+        this.selectController.assignInfo ||
+        this.selectController.inspireInfo ||
+        this.tutorialController.isOpened ||
+        this.tutorialController.movePrg < 1
+      if (!isNotActionableExceptGameOver) {
+        this.sceneController.setScene("MENU")
+      }
+    }
   }
 
   statsController: StatsController = {
@@ -261,22 +284,27 @@ export default class PlayScene {
       {
         panelY: 475,
         imageHeight: 100,
+        focusInfo: [150, 183, 290, 340],
       },
       {
         panelY: 240,
         imageHeight: 160,
+        focusInfo: [460, 45, 260, 70],
       },
       {
-        panelY: 280,
+        panelY: 270,
         imageHeight: 100,
+        focusInfo: [300, 500, 570, 180],
       },
       {
         panelY: 130,
         imageHeight: 130,
+        focusInfo: [460, 310, 250, 60],
       },
       {
         panelY: 450,
         imageHeight: 100,
+        focusInfo: [530, 180, 120, 180],
       },
       {
         panelY: 300,
@@ -296,15 +324,20 @@ export default class PlayScene {
     setIndex: (isNext) => {
       const tc = this.tutorialController
       tc.movePrg = 0 // trigger move
+      tc.focusRect.movePrg = 0
+      const panelInfo = tc.PANELS[tc.index]
+
       if (tc.index >= 0) {
-        tc.startY = tc.PANELS[tc.index].panelY
+        tc.startY = panelInfo.panelY
+        tc.focusRect.prevInfo = panelInfo.focusInfo || tc.focusRect.prevInfo
       } else {
-        tc.startY = -300
+        tc.startY = -140
       }
       if (isNext) {
         // is closing?
         if (tc.index === 6) {
           tc.isOpened = false
+          this.gc.buttons[11].prg = 1
           return
         }
         tc.index++
@@ -312,6 +345,7 @@ export default class PlayScene {
         // is closing?
         if (tc.index === 0) {
           tc.isOpened = false
+          this.gc.buttons[11].prg = 1
           return
         }
         tc.index--
@@ -325,13 +359,34 @@ export default class PlayScene {
         return
       }
       const panelInfo = tc.PANELS[tc.index]
+      const focusRect = tc.focusRect
+      let currentFI = panelInfo.focusInfo ? panelInfo.focusInfo : [300, 0, 0, 0]
+      let isVisible = panelInfo.focusInfo !== undefined
 
       // update movePrg
       tc.movePrg = p5.min(1, tc.movePrg + 0.02)
+      // update focusRect
+      if (isVisible) {
+        focusRect.spawnPrg = p5.min(focusRect.spawnPrg + 0.05, 1)
+      } else {
+        focusRect.spawnPrg = p5.max(focusRect.spawnPrg - 0.05, 0)
+      }
+      focusRect.movePrg = p5.min(focusRect.movePrg + 0.03, 1)
 
-      const endY = !tc.isOpened ? -300 : panelInfo.panelY
-
+      const endY = !tc.isOpened ? -140 : panelInfo.panelY
       const y = p5.map(easeOutCubic(tc.movePrg), 0, 1, tc.startY, endY)
+
+      // focus rect
+      p5.stroke(240, 240, 50)
+      p5.strokeWeight(focusRect.spawnPrg * 3)
+      p5.noFill()
+      const easedMovePrg = easeOutCubic(focusRect.movePrg)
+      p5.rect(
+        p5.map(easedMovePrg, 0, 1, focusRect.prevInfo[0], currentFI[0]),
+        p5.map(easedMovePrg, 0, 1, focusRect.prevInfo[1], currentFI[1]),
+        p5.map(easedMovePrg, 0, 1, focusRect.prevInfo[2], currentFI[2]),
+        p5.map(easedMovePrg, 0, 1, focusRect.prevInfo[3], currentFI[3]),
+      )
 
       // panel rect
       p5.stroke(200)
@@ -347,6 +402,15 @@ export default class PlayScene {
         600,
         panelInfo.imageHeight,
       )
+
+      // buttons
+      const buttons = this.gc.buttons
+      const { mx, my } = this.gc
+
+      buttons[12].y = y + 95
+      buttons[13].y = y + 95
+      buttons[12].render(mx, my)
+      buttons[13].render(mx, my)
     },
   }
 
@@ -943,9 +1007,17 @@ export default class PlayScene {
       let pileCount = cards.drawPile.length
       const isNotActionable = this.selectController.isNotActionable()
 
-      // extra: render help button
+      // extra: render help button (and hint)
       if (!isNotActionable) {
         this.gc.buttons[11].render(mx, my)
+        if (this.isHintingAtHelp) {
+          p5.stroke(240, 240, 50)
+          p5.strokeWeight(5)
+          const boundY = p5.cos(p5.frameCount * 0.07) * 10
+          p5.line(400, 160 + boundY, 400, 210 + boundY)
+          p5.line(400, 160 + boundY, 410, 170 + boundY)
+          p5.line(400, 160 + boundY, 390, 170 + boundY)
+        }
       } else {
         this.gc.buttons[11].isHovered = false
       }
@@ -1595,10 +1667,6 @@ export default class PlayScene {
       return indices
     },
     isNotActionable: () => {
-      const projectController = this.projectController
-      const selectController = this.selectController
-      const queue = projectController.queue
-
       // project has a target
       // project has laser?
       // last project is still spawning?
@@ -1610,14 +1678,15 @@ export default class PlayScene {
       // game is over?
       // tutorial is shown?
       return !!(
-        projectController.hitController.target ||
-        projectController.hitController.laser ||
-        queue[queue.length - 1].spawnPrg < 2 ||
+        this.projectController.hitController.target ||
+        this.projectController.hitController.laser ||
+        this.projectController.queue[this.projectController.queue.length - 1]
+          .spawnPrg < 2 ||
         this.deckController.isDrawing ||
         this.deckController.drawPrgs.length !== 0 ||
-        selectController.discardPrg !== null ||
-        selectController.assignInfo ||
-        selectController.inspireInfo ||
+        this.selectController.discardPrg !== null ||
+        this.selectController.assignInfo ||
+        this.selectController.inspireInfo ||
         this.checkGameIsOver() ||
         this.tutorialController.isOpened ||
         this.tutorialController.movePrg < 1
@@ -1844,8 +1913,8 @@ export default class PlayScene {
     // reset
     this.screenShakePrg = 1
     this.gameIsOver = false
-    statsController.energy = 10
-    statsController.completedAmount = 0
+    statsController.energy = 0
+    statsController.completedAmount = 4 ///
 
     projectController.projectMaxHP = 10
     projectController.queue = []
@@ -1938,35 +2007,27 @@ export default class PlayScene {
     p5.pop()
 
     this.tutorialController.render()
+    this.checkGoToEndScene()
   }
 
-  ///
-  keyReleased() {
-    this.tutorialController.setIndex(true)
-    this.screenShakePrg = 0
-    const keyCode = this.p5.keyCode
-    if (this.selectController.isNotActionable()) return
-    if (keyCode === 49) {
-      this.projectController.damage(this.projectController.queue[0].subject, 15)
-    } else if (keyCode === 50) {
-      this.projectController.damage(this.projectController.queue[1].subject, 55)
-    } else if (keyCode === 51) {
-      this.projectController.damage(
-        this.projectController.queue[2].subject,
-        105,
-      )
-    } else if (keyCode === 52) {
-      this.projectController.damage(this.projectController.queue[3].subject, 25)
-    }
-  }
+  // keyReleased() {
+  //   const keyCode = this.p5.keyCode
+  // }
 
   click() {
+    const { mx, my } = this.gc
+    const buttons = this.gc.buttons
+
     // is showing tutorial?
     const tutorialController = this.tutorialController
     if (tutorialController.isOpened || tutorialController.movePrg < 1) {
       // not moving?
       if (tutorialController.movePrg === 1) {
-        //// back/next buttons
+        if (buttons[12].isHovered) {
+          buttons[12].clicked()
+        } else if (buttons[13].isHovered) {
+          buttons[13].clicked()
+        }
       }
       return
     }
@@ -1975,8 +2036,6 @@ export default class PlayScene {
     if (selectController.isNotActionable()) {
       return
     }
-    const { mx, my } = this.gc
-    const buttons = this.gc.buttons
 
     // is showing draw pile modal?
     const inspectModal = this.deckController.inspectModal
@@ -2013,9 +2072,11 @@ export default class PlayScene {
     }
     if (selectedCount === 1 && buttons[1].isHovered) {
       buttons[1].clicked() // assign
+      this.isHintingAtHelp = false
       return
     } else if (selectedCount > 1 && buttons[2].isHovered) {
       buttons[2].clicked() // discard
+      this.isHintingAtHelp = false
       return
     }
 

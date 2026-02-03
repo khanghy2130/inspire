@@ -1,7 +1,7 @@
 import type P5 from "p5"
 import PlayScene from "./PlayScene"
 
-type Scene = "LOAD" | "MENU" | "PLAY"
+type Scene = "LOAD" | "MENU" | "PLAY" | "END"
 
 export default class SceneController {
   p5!: P5
@@ -29,7 +29,7 @@ export default class SceneController {
   public updateAndRender() {
     if (this.prg >= 2) return
     const p5 = this.p5
-    this.prg += 0.05 // 0.01
+    this.prg += 0.02 // 0.01
     if (this.prg >= 1 && this.targetScene !== this.scene) {
       this.scene = this.targetScene // switch scene
     }

@@ -796,7 +796,7 @@ export default class LoadScene {
 
     // all done
     if (this.sceneController.isNotTransitioning()) {
-      this.sceneController.setScene("PLAY")
+      this.sceneController.setScene("END")
     }
   }
 
