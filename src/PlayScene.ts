@@ -1812,6 +1812,46 @@ export default class PlayScene {
     this.selectController.renderHoverPopup()
 
     p5.pop()
+
+    // tutorial rendering
+    p5.push()
+    p5.rectMode(p5.CORNER)
+
+    p5.translate(125, -100)
+
+    p5.fill(80, 180) ///
+    p5.noStroke()
+
+    // y of rect is prevRectY + prevRectH
+
+    p5.rect(0, 0, 350, 270) // #1
+    /*
+    const whiteColor = p5.color(250)
+    customFont.render(
+      "welcome! this game is about\na collaboration between 32\nstudents to work on different\nprojects. there are 4 types of\nstudents and projects:",
+      15,
+      30,
+      13,
+      whiteColor,
+      p5,
+    )
+    for (let i = 0; i < 4; i++) {
+      p5.image(loadScene.subjectIconImages[i], 50, 160 + 30 * i, 22, 22)
+      customFont.render(
+        this.projectController.NAMES[i],
+        70,
+        166 + 30 * i,
+        15,
+        p5.color(loadScene.SUBJECT_COLORS[i]),
+        p5,
+      )
+    }
+    */
+
+    p5.rect(0, 270, 200, 270) // #2
+
+    p5.rectMode(p5.CENTER)
+    p5.pop()
   }
 
   keyReleased() {

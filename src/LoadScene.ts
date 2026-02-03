@@ -32,6 +32,8 @@ export default class LoadScene {
   hintTextImage!: P5.Image
   inspireDescImage!: P5.Image
 
+  tutorialGraphics!: P5.Graphics
+
   readonly SUBJECT_COLORS: [number, number, number][] = [
     [60, 220, 145], // green
     [85, 180, 240], // blue
@@ -382,6 +384,17 @@ export default class LoadScene {
         (p5.width / 600) * 290,
         (p5.width / 600) * 70,
       )
+    },
+
+    // tutorial graphics (part 1)
+    () => {
+      const p5 = this.p5
+      this.tutorialGraphics = p5.createGraphics(350, 700, p5.P2D)
+      const tg = this.tutorialGraphics
+      tg.clear()
+      tg.noStroke()
+      tg.fill(0, 230)
+      tg.rect(0, 0, tg.width, tg.height)
     },
   ]
 

@@ -229,7 +229,7 @@ export default class GameClient {
               270,
               110,
               35,
-              "color",
+              "type",
               12,
               p5.color(200, 33, 140),
               () => {
