@@ -41,6 +41,7 @@ export default class MenuScene {
     customFont.render("inspire", 50, 260, 90, p5.color(255, 0, 230), p5)
 
     // front
+    p5.strokeWeight(15)
     for (let x = -4; x < 604; x += 2) {
       const rad = x * 0.02 + fc
       // is going up?

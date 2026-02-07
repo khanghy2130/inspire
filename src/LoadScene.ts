@@ -777,7 +777,13 @@ export default class LoadScene {
 
   public renderMainBackground() {
     const p5 = this.p5
-    p5.image(this.backgroundImage, 300, 300, 600, 600)
+    p5.image(
+      this.backgroundImage,
+      300 + p5.cos(p5.frameCount * 0.0028) * 20,
+      300 + p5.sin(p5.frameCount * 0.0012) * 20,
+      640,
+      640,
+    )
   }
 
   public update() {

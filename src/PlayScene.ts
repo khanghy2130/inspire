@@ -2055,7 +2055,10 @@ export default class PlayScene {
     const allSubjectTypes: SubjectType[] = [0, 1, 2, 3]
     while (allSubjectTypes.length > 0) {
       projectController.add(
-        allSubjectTypes.splice(this.p5.random() * allSubjectTypes.length, 1)[0],
+        allSubjectTypes.splice(
+          this.p5.floor(this.p5.random() * allSubjectTypes.length),
+          1,
+        )[0],
       )
     }
 
@@ -2063,7 +2066,7 @@ export default class PlayScene {
   }
 
   draw() {
-    const { p5, loadScene, projectController, deckController } = this
+    const { p5, projectController, deckController } = this
     p5.cursor(p5.ARROW)
 
     // showing draw pile modal
@@ -2072,7 +2075,7 @@ export default class PlayScene {
       return
     }
 
-    p5.image(loadScene.backgroundImage, 300, 300, 600, 600)
+    this.loadScene.renderMainBackground()
 
     p5.push()
     // screen shake
